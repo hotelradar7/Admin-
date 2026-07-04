@@ -12,233 +12,289 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
-  --ink:#1C1B1A;--ink-soft:#5C5955;--ink-faint:#948F89;
-  --paper:#F8F7F4;--paper-dim:#F0EDE7;--card:#FFFFFF;--line:#E7E2D9;
-  --accent:#E8631C;--accent-dim:#FCE8DB;--accent-ink:#7A350F;
-  --good:#1F7A4D;--good-dim:#E1F3E9;
-  --blue:#2563EB;--blue-dim:#EFF6FF;
-  --purple:#7C3AED;--purple-dim:#F5F3FF;
-  --r-sm:10px;--r-md:14px;--r-lg:20px;
-  --sh1:0 1px 3px rgba(28,27,26,.07);
-  --sh2:0 4px 16px rgba(28,27,26,.09);
-  --sh3:0 12px 32px rgba(28,27,26,.14);
-  --nav:220px;
+  --ink:#1C1B1A;--ink-s:#5C5955;--ink-f:#948F89;
+  --paper:#F8F7F4;--pd:#F0EDE7;--card:#fff;--line:#E7E2D9;
+  --ac:#E8631C;--acd:#FCE8DB;--aci:#7A350F;
+  --good:#1F7A4D;--gd:#E1F3E9;
+  --blue:#2563EB;--bd:#EFF6FF;
+  --pur:#7C3AED;--purd:#F5F3FF;
+  --r:10px;--r2:14px;--r3:20px;
+  --s1:0 1px 3px rgba(28,27,26,.07);
+  --s2:0 4px 16px rgba(28,27,26,.09);
+  --s3:0 12px 32px rgba(28,27,26,.14);
 }
-html{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
+html{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;font-size:15px;}
 h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:700;line-height:1.25;}
 button,input,select,textarea{font-family:inherit;font-size:14px;border:none;outline:none;}
 button{cursor:pointer;background:none;-webkit-tap-highlight-color:transparent;}
-.ns::-webkit-scrollbar{display:none;}
-.ns{-ms-overflow-style:none;scrollbar-width:none;}
-@keyframes spin{to{transform:rotate(360deg);}}
-.spin{animation:spin .7s linear infinite;display:inline-block;}
-@keyframes fi{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-.fi{animation:fi .2s ease-out forwards;}
-/* Layout */
-.sidebar{width:var(--nav);background:var(--card);border-right:1px solid var(--line);position:fixed;top:0;left:0;height:100vh;z-index:30;display:flex;flex-direction:column;overflow-y:auto;}
-.main{margin-left:var(--nav);min-height:100vh;display:flex;flex-direction:column;}
-@media(max-width:680px){.sidebar{display:none;}.main{margin-left:0;}}
-.topbar{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh1);}
-.content{padding:20px;flex:1;max-width:960px;}
-/* Nav */
-.ni{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12.5px;font-weight:600;color:var(--ink-soft);border-radius:8px;margin:2px 8px;cursor:pointer;transition:all .12s;}
-.ni:hover{background:var(--paper-dim);color:var(--ink);}
-.ni.on{background:var(--accent-dim);color:var(--accent);}
-.ni .bdg{margin-left:auto;background:#EF4444;color:#fff;font-size:9px;font-weight:900;padding:1px 5px;border-radius:999px;min-width:16px;text-align:center;}
+.ns::-webkit-scrollbar{display:none;}.ns{-ms-overflow-style:none;scrollbar-width:none;}
+@keyframes spin{to{transform:rotate(360deg);}}.spin{animation:spin .7s linear infinite;display:inline-block;}
+@keyframes fi{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}.fi{animation:fi .2s ease-out;}
+
+/* ── LAYOUT ── */
+.layout{display:flex;min-height:100vh;}
+
+/* Desktop sidebar */
+.sidebar{width:220px;background:var(--card);border-right:1px solid var(--line);position:fixed;top:0;left:0;height:100vh;z-index:30;display:flex;flex-direction:column;overflow-y:auto;transition:transform .25s;}
+.main{margin-left:220px;min-height:100vh;display:flex;flex-direction:column;}
+
+/* Mobile bottom nav */
+.mob-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);z-index:40;padding:6px 0 8px;}
+.mob-nav-inner{display:flex;overflow-x:auto;gap:2px;padding:0 4px;}
+.mob-nav-inner::-webkit-scrollbar{display:none;}
+.mni{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 10px;border-radius:8px;cursor:pointer;flex-shrink:0;min-width:52px;transition:background .12s;}
+.mni.on{background:var(--acd);}
+.mni svg{color:var(--ink-f);}
+.mni.on svg{color:var(--ac);}
+.mni span{font-size:9px;font-weight:700;color:var(--ink-f);white-space:nowrap;}
+.mni.on span{color:var(--ac);}
+
+/* Mobile hamburger */
+.mob-top{display:none;position:sticky;top:0;z-index:40;background:var(--card);border-bottom:1px solid var(--line);padding:11px 16px;align-items:center;justify-content:space-between;box-shadow:var(--s1);}
+
+@media(max-width:700px){
+  .sidebar{display:none;}
+  .main{margin-left:0;padding-bottom:80px;}
+  .mob-nav{display:block;}
+  .mob-top{display:flex;}
+}
+
+.topbar{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--s1);}
+@media(max-width:700px){.topbar{display:none;}}
+
+.content{padding:16px;flex:1;max-width:960px;}
+
+/* Sidebar nav item */
+.ni{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12.5px;font-weight:600;color:var(--ink-s);border-radius:8px;margin:2px 8px;cursor:pointer;transition:all .12s;}
+.ni:hover{background:var(--pd);color:var(--ink);}
+.ni.on{background:var(--acd);color:var(--ac);}
+.ni .bdg{margin-left:auto;background:#EF4444;color:#fff;font-size:9px;font-weight:900;padding:1px 5px;border-radius:999px;}
+
 /* Cards */
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh1);}
-.scard{padding:16px;display:flex;flex-direction:column;gap:3px;}
-.sval{font-size:26px;font-weight:700;font-family:'Fraunces',serif;}
-.slbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);box-shadow:var(--s1);}
+.scard{padding:16px;display:flex;flex-direction:column;gap:4px;}
+.sval{font-size:24px;font-weight:700;font-family:'Fraunces',serif;}
+.slbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-f);}
+
 /* Inputs */
-.inp{width:100%;padding:9px 12px;background:var(--paper-dim);border:1px solid var(--line);border-radius:var(--r-sm);font-size:13px;color:var(--ink);transition:border .15s;}
-.inp:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim);}
+.inp{width:100%;padding:9px 12px;background:var(--pd);border:1px solid var(--line);border-radius:var(--r);font-size:13px;color:var(--ink);transition:border .15s;}
+.inp:focus{border-color:var(--ac);box-shadow:0 0 0 2px var(--acd);}
+textarea.inp{resize:vertical;}
+
 /* Buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:var(--r-sm);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .12s;border:none;}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:var(--r);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .12s;border:none;}
 .btn:active{transform:scale(.97);}
-.ba{background:var(--accent);color:#fff;}
+.ba{background:var(--ac);color:#fff;}.ba:hover{opacity:.92;}
 .bg{background:var(--good);color:#fff;}
 .bb{background:var(--blue);color:#fff;}
 .br{background:#EF4444;color:#fff;}
-.bo{background:var(--card);color:var(--ink-soft);border:1px solid var(--line);}
-.bo:hover{background:var(--paper-dim);}
+.bo{background:var(--card);color:var(--ink-s);border:1px solid var(--line);}
+.bo:hover{background:var(--pd);}
+.btn-w{width:100%;justify-content:center;}
+
 /* Badges */
 .b{display:inline-block;padding:2px 7px;border-radius:999px;font-size:9.5px;font-weight:800;text-transform:uppercase;}
-.bg2{background:var(--good-dim);color:var(--good);}
-.br2{background:#FEE2E2;color:#DC2626;}
-.ba2{background:#FEF3C7;color:#92400E;}
-.bb2{background:var(--blue-dim);color:var(--blue);}
-.bp2{background:var(--purple-dim);color:var(--purple);}
-.bx{background:var(--paper-dim);color:var(--ink-faint);}
+.b-g{background:var(--gd);color:var(--good);}
+.b-r{background:#FEE2E2;color:#DC2626;}
+.b-a{background:#FEF3C7;color:#92400E;}
+.b-b{background:var(--bd);color:var(--blue);}
+.b-p{background:var(--purd);color:var(--pur);}
+.b-x{background:var(--pd);color:var(--ink-f);}
+
 /* Toggle */
 .tog{width:40px;height:22px;background:var(--line);border-radius:999px;position:relative;cursor:pointer;transition:background .15s;flex-shrink:0;}
 .tog.on{background:var(--good);}
 .tog::after{content:'';width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
 .tog.on::after{transform:translateX(18px);}
+
 /* Chip */
-.chip{padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--paper-dim);color:var(--ink-soft);font-size:11px;font-weight:700;cursor:pointer;transition:all .1s;}
-.chip.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+.chip{padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--pd);color:var(--ink-s);font-size:11px;font-weight:700;cursor:pointer;transition:all .1s;}
+.chip.on{background:var(--ac);color:#fff;border-color:var(--ac);}
+
 /* Table */
 .tbl{width:100%;border-collapse:collapse;font-size:12px;}
-.tbl th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);border-bottom:1px solid var(--line);background:var(--paper-dim);}
+.tbl th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-f);border-bottom:1px solid var(--line);background:var(--pd);}
 .tbl td{padding:9px 12px;border-bottom:1px solid var(--line);}
 .tbl tr:last-child td{border-bottom:none;}
-.tbl tr:hover td{background:var(--paper-dim);}
+.tbl tr:hover td{background:var(--pd);}
+
 /* Overlay */
 .ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 14px;}
-/* Grid */
+
+/* Grids */
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .g3{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
-@media(min-width:520px){.g3{grid-template-columns:repeat(4,1fr);}}
-/* Tabs (small admin) */
-.tab-row{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--card);padding:0 10px;}
-.tab-row::-webkit-scrollbar{display:none;}
-.tbtn{padding:11px 13px;font-size:12px;font-weight:700;border-bottom:2px solid transparent;color:var(--ink-soft);white-space:nowrap;cursor:pointer;transition:all .12s;}
-.tbtn.on{border-color:var(--accent);color:var(--accent);}
-/* Plan banners */
-.pl-free{background:var(--good-dim);border:1px solid #86EFAC;}
-.pl-paid{background:var(--blue-dim);border:1px solid #BFDBFE;}
-.pl-exp{background:#FEF2F2;border:1px solid #FECACA;}
-.pl-ban{padding:12px 16px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+@media(min-width:500px){.g3{grid-template-columns:repeat(4,1fr);}}
+@media(max-width:480px){.g2{grid-template-columns:1fr;}}
+
+/* Section title */
+.st{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-f);margin-bottom:8px;}
+
 /* Link box */
-.link-box{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--paper-dim);border:1px solid var(--line);border-radius:var(--r-sm);font-size:12px;font-family:monospace;word-break:break-all;color:var(--ink);}
+.lbx{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--pd);border:1px solid var(--line);border-radius:var(--r);font-size:11.5px;font-family:monospace;word-break:break-all;color:var(--ink);}
+
+/* Plan banners */
+.pl-free{background:var(--gd);border:1px solid #86EFAC;}
+.pl-paid{background:var(--bd);border:1px solid #BFDBFE;}
+.pl-exp{background:#FEF2F2;border:1px solid #FECACA;}
+.pl-ban{padding:12px 16px;border-radius:var(--r2);display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+
 /* Review */
 .rv{padding:14px;border-bottom:1px solid var(--line);}
 .rv:last-child{border-bottom:none;}
 .stars{color:#F59E0B;}
+
+/* Color picker input */
+input[type=color]{padding:2px;height:36px;border-radius:6px;cursor:pointer;}
+
+/* Section card */
+.sec-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);padding:16px;margin-bottom:12px;}
 </style>
 </head>
 <body>
 <div id="app"></div>
 <script>
-// ═══════════════════════ CONFIG ═══════════════════════
+// ══════════════════════════════════════════
+// CONFIG
+// ══════════════════════════════════════════
 const FB={apiKey:"AIzaSyDoBNdJEAos6Ofj-KDzvarg_mH1Nz3nQls",authDomain:"hotel-radar-india.firebaseapp.com",databaseURL:"https://hotel-radar-india-default-rtdb.firebaseio.com",projectId:"hotel-radar-india",storageBucket:"hotel-radar-india.firebasestorage.app",messagingSenderId:"492786665359",appId:"1:492786665399:web:7033614463c044cf4fadfa"};
 const SUPER_EMAIL="aryakaran836@gmail.com";
 const AMENITIES=["AC","WiFi","Restaurant","Parking","Pool","Gym","Spa","Ganga View","Mountain View","Room Service","Laundry","Couple Friendly","Family Friendly","Hot Water","TV","Mini Bar","Balcony","Garden","Airport Shuttle","24/7 Reception"];
-// Detect mode from URL
-const URL_PARAMS=new URLSearchParams(location.search);
-const HOTEL_EMAIL=URL_PARAMS.get('admin'); // ?admin=email → small panel
-const IS_HOTEL_MODE=!!HOTEL_EMAIL;
+const URL_P=new URLSearchParams(location.search);
+const HOTEL_EMAIL=URL_P.get('admin');
+const IS_HOTEL=!!HOTEL_EMAIL;
 
-// ═══════════════════════ STATE ═══════════════════════
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
 let S={
-  // auth
   authReady:false,isAuth:false,user:null,
-  // super admin data
-  hotels:[],sharedAdmins:[],payments:[],bookings:[],reviews:[],searchLogs:[],
+  tab:'dashboard',
+  // super data
+  hotels:[],sharedAdmins:[],payments:[],bookings:[],searchLogs:[],
   // hotel admin data
-  myAdminData:null,myHotel:null,myBookings:[],myReviews:[],
-  // ui
-  tab:'dashboard',loading:true,
+  myAdmin:null,myHotel:null,myBookings:[],myReviews:[],
+  loading:true,
   // forms
-  showAddHotel:false,editHotel:null,hForm:eHotel(),hFormErr:'',hFormSaving:false,amenityInput:'',
-  showShare:false,shareEmail:'',shareErr:'',shareSaving:false,generatedLink:'',
+  showHotelForm:false,editHotel:null,
+  hf:eH(),hfErr:'',hfSaving:false,amenityInput:'',
+  showShare:false,shareEmail:'',shareErr:'',shareSaving:false,genLink:'',
   showPayment:false,payOpt:'monthly',
-  deleteId:null,deleteType:'',
+  delId:null,delType:'',
+  // website settings
+  siteSettings:{
+    heroTitle:'Find Your Perfect Stay',
+    heroSubtitle:'India\'s trusted hotel directory — verified hotels, direct contact, zero commission.',
+    heroGradient:'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
+    accentColor:'#E8631C',
+    siteName:'HotelRadar',
+    whatsapp:'',
+    email:'',
+    phone:'',
+    footerText:'Made with ❤️ in India',
+    showBanner:true,
+    bannerText:'🎉 New hotels added in Haridwar & Rishikesh!',
+    maintenanceMode:false,
+  },
+  settingsSaving:false,
   // login
   lEmail:'',lPass:'',lErr:'',lLoading:false,lShowPass:false,gLoad:false,
   toast:null,
+  hotelSearch:'',hotelFilter:'all',
 };
-function eHotel(){return{name:'',city:'',state:'',area:'',pin:'',phone:'',type:'hotel',price:'',rating:'4.5',reviewCount:'0',checkIn:'12:00 PM',checkOut:'11:00 AM',plan:'basic',emoji:'🏨',gradient:'linear-gradient(135deg,#E8631C,#F2A65A)',desc:'',amenities:[],badges:[],approved:false,active:true};}
+function eH(){return{name:'',city:'',state:'',area:'',pin:'',phone:'',type:'hotel',price:'',rating:'4.5',reviewCount:'0',checkIn:'12:00 PM',checkOut:'11:00 AM',plan:'basic',emoji:'🏨',gradient:'linear-gradient(135deg,#E8631C,#F2A65A)',desc:'',amenities:[],badges:[],approved:false,active:true};}
 function set(p){S={...S,...p};render();}
-function sf(p){set({hForm:{...S.hForm,...p}});}
+function sh(p){set({hf:{...S.hf,...p}});}
+function ss(p){set({siteSettings:{...S.siteSettings,...p}});}
 
-// ═══════════════════════ FIREBASE ═══════════════════════
+// ══════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════
 let db=null;
 function initFB(){
   if(!firebase.apps.length)firebase.initializeApp(FB);
   db=firebase.database();
   firebase.auth().onAuthStateChanged(async u=>{
     if(!u){set({authReady:true,isAuth:false});return;}
-    if(IS_HOTEL_MODE){
-      // Small admin panel — check if this user's email matches HOTEL_EMAIL param
-      const email=u.email;
-      const expectedEmail=decodeURIComponent(HOTEL_EMAIL);
-      if(email.toLowerCase()!==expectedEmail.toLowerCase()){
-        await firebase.auth().signOut();
-        set({authReady:true,isAuth:false,lErr:`This panel is for ${expectedEmail}. Please sign in with that Google account.`});
-        return;
-      }
+    if(IS_HOTEL){
+      const email=u.email,exp=decodeURIComponent(HOTEL_EMAIL);
+      if(email.toLowerCase()!==exp.toLowerCase()){await firebase.auth().signOut();set({authReady:true,isAuth:false,lErr:`This panel is for: ${exp}`});return;}
       const key=email.replace(/\./g,'_');
       const snap=await db.ref(`sharedAdmins/${key}`).get();
-      if(!snap.exists()){
-        await firebase.auth().signOut();
-        set({authReady:true,isAuth:false,lErr:'Access not granted. Contact HotelRadar admin.'});
-        return;
-      }
-      const adminData=snap.val();
-      set({authReady:true,isAuth:true,user:u,myAdminData:{...adminData,key}});
-      loadHotelMode(email,key,adminData);
+      if(!snap.exists()){await firebase.auth().signOut();set({authReady:true,isAuth:false,lErr:'Access not granted. Contact HotelRadar admin.'});return;}
+      const ad=snap.val();
+      set({authReady:true,isAuth:true,user:u,myAdmin:{...ad,key}});
+      loadHotelData(email,key,ad);
     } else {
-      // Super admin panel
-      if(u.email!==SUPER_EMAIL){await firebase.auth().signOut();set({authReady:true,isAuth:false,lErr:'Access denied. Super Admin only.'});return;}
+      if(u.email!==SUPER_EMAIL){await firebase.auth().signOut();set({authReady:true,isAuth:false,lErr:'Access denied. Only Super Admin can login here.'});return;}
       set({authReady:true,isAuth:true,user:u});
-      loadSuperMode();
+      loadSuperData();
     }
   });
 }
 
-function loadSuperMode(){
-  db.ref('hotels').on('value',s=>{const d=s.val();if(!d){set({hotels:[],loading:false});return;}const l=Array.isArray(d)?d.filter(Boolean):Object.keys(d).map(k=>({...d[k],id:d[k].id||k}));set({hotels:l,loading:false});});
+function loadSuperData(){
+  db.ref('hotels').on('value',s=>{
+    const d=s.val();if(!d){set({hotels:[],loading:false});return;}
+    const l=Array.isArray(d)?d.filter(Boolean):Object.keys(d).map(k=>({...d[k],id:d[k].id||k}));
+    set({hotels:l,loading:false});
+  });
   db.ref('sharedAdmins').on('value',s=>{const d=s.val();if(!d){set({sharedAdmins:[]});return;}set({sharedAdmins:Object.keys(d).map(k=>({...d[k],key:k}))});});
   db.ref('payments').on('value',s=>{const d=s.val();if(!d){set({payments:[]});return;}set({payments:Object.keys(d).map(k=>({...d[k],id:k}))});});
   db.ref('bookings').on('value',s=>{const d=s.val();if(!d){set({bookings:[]});return;}set({bookings:Object.keys(d).map(k=>({...d[k],id:k}))});});
   db.ref('searchLogs').limitToLast(300).on('value',s=>{const d=s.val();if(!d){set({searchLogs:[]});return;}set({searchLogs:Object.keys(d).map(k=>({...d[k],id:k})).reverse()});});
+  db.ref('siteSettings').get().then(s=>{if(s.exists())set({siteSettings:{...S.siteSettings,...s.val()}});});
 }
 
-function loadHotelMode(email,key,adminData){
+function loadHotelData(email,key,ad){
   db.ref('hotels').on('value',s=>{
     const d=s.val();if(!d){set({myHotel:null,loading:false});return;}
     const all=Array.isArray(d)?d.filter(Boolean):Object.keys(d).map(k=>({...d[k],id:d[k].id||k}));
-    const mine=all.find(h=>h.ownerEmail===email||h.id===adminData.hotelId)||null;
-    set({myHotel:mine,loading:false,hForm:mine?{...mine,price:String(mine.price||''),rating:String(mine.rating||'4.5'),reviewCount:String(mine.reviewCount||0)}:eHotel()});
+    const mine=all.find(h=>h.ownerEmail===email||h.id===ad.hotelId)||null;
+    set({myHotel:mine,loading:false,hf:mine?{...mine,price:String(mine.price||''),rating:String(mine.rating||'4.5'),reviewCount:String(mine.reviewCount||0)}:eH()});
   });
   db.ref('bookings').on('value',s=>{
     const d=s.val();if(!d){set({myBookings:[]});return;}
     const all=Object.keys(d).map(k=>({...d[k],id:k}));
-    set({myBookings:all.filter(b=>b.hotelId===adminData.hotelId||b.ownerEmail===email)});
+    set({myBookings:all.filter(b=>b.hotelId===ad.hotelId||b.ownerEmail===email)});
   });
-  const hKey=adminData.hotelId||key;
-  db.ref(`reviews/${hKey}`).on('value',s=>{
+  db.ref(`reviews/${ad.hotelId||key}`).on('value',s=>{
     const d=s.val();if(!d){set({myReviews:[]});return;}
     set({myReviews:Object.keys(d).map(k=>({...d[k],id:k})).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0))});
   });
 }
 
-// Auth actions
 async function doLogin(){
   if(S.lLoading)return;set({lLoading:true,lErr:''});
   try{await firebase.auth().signInWithEmailAndPassword(S.lEmail,S.lPass);}
-  catch(e){const c=e.code||'';set({lLoading:false,lErr:c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-credential'?'Invalid credentials.':e.message||'Login failed.'});}
+  catch(e){const c=e.code||'';set({lLoading:false,lErr:c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-credential'?'Invalid email or password.':e.message||'Login failed.'});}
 }
 async function doGoogle(){
   set({gLoad:true,lErr:''});
   try{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});await firebase.auth().signInWithPopup(p);}
-  catch(e){set({gLoad:false,lErr:'Google sign-in failed.'});}
+  catch(e){set({gLoad:false,lErr:'Google sign-in failed. Try again.'});}
 }
 async function doSignOut(){await firebase.auth().signOut();set({isAuth:false,user:null,tab:'dashboard'});}
 
 // Hotel ops
 async function saveHotel(){
-  if(!S.hForm.name?.trim()){set({hFormErr:'Hotel name required'});return;}
-  if(!S.hForm.city?.trim()){set({hFormErr:'City required'});return;}
-  if(!S.hForm.phone?.trim()){set({hFormErr:'Phone required'});return;}
-  if(!S.hForm.price||Number(S.hForm.price)<=0){set({hFormErr:'Valid price required'});return;}
-  set({hFormSaving:true,hFormErr:''});
+  if(!S.hf.name?.trim()){set({hfErr:'Hotel name required'});return;}
+  if(!S.hf.city?.trim()){set({hfErr:'City required'});return;}
+  if(!S.hf.phone?.trim()){set({hfErr:'Phone required'});return;}
+  if(!S.hf.price||Number(S.hf.price)<=0){set({hfErr:'Valid price required'});return;}
+  set({hfSaving:true,hfErr:''});
   try{
-    const existId=S.editHotel?.id||(IS_HOTEL_MODE?S.myAdminData?.hotelId:null);
+    const existId=S.editHotel?.id||(IS_HOTEL?S.myAdmin?.hotelId:null);
     const id=existId||('h'+Date.now());
-    const h={...S.hForm,id,price:Number(S.hForm.price)||0,rating:Number(S.hForm.rating)||4.5,reviewCount:Number(S.hForm.reviewCount)||0,createdAt:existId?(S.editHotel?.createdAt||new Date().toISOString()):new Date().toISOString()};
-    if(IS_HOTEL_MODE){h.ownerEmail=S.user.email;await db.ref(`sharedAdmins/${S.myAdminData.key}`).update({hotelId:id});}
+    const h={...S.hf,id,price:Number(S.hf.price)||0,rating:Number(S.hf.rating)||4.5,reviewCount:Number(S.hf.reviewCount)||0,createdAt:existId?(S.editHotel?.createdAt||new Date().toISOString()):new Date().toISOString()};
+    if(IS_HOTEL){h.ownerEmail=S.user.email;await db.ref(`sharedAdmins/${S.myAdmin.key}`).update({hotelId:id});}
     await db.ref(`hotels/${id}`)[existId?'update':'set'](h);
     toast(existId?'Hotel updated!':'Hotel added!');
-    set({showAddHotel:false,editHotel:null,hFormSaving:false});
-  }catch(e){set({hFormErr:e.message||'Save failed',hFormSaving:false});}
+    set({showHotelForm:false,editHotel:null,hfSaving:false});
+  }catch(e){set({hfErr:e.message||'Save failed',hfSaving:false});}
 }
-async function delHotel(id){await db.ref(`hotels/${id}`).remove();set({deleteId:null});toast('Deleted.');}
-async function togField(id,f,v){await db.ref(`hotels/${id}`).update({[f]:v});}
-
-// Share admin
+async function delHotel(id){await db.ref(`hotels/${id}`).remove();set({delId:null});toast('Hotel deleted.');}
+async function togF(id,f,v){await db.ref(`hotels/${id}`).update({[f]:v});}
 async function shareAdmin(){
   const email=S.shareEmail.trim().toLowerCase();
   if(!email.includes('@')){set({shareErr:'Enter valid Gmail.'});return;}
@@ -247,30 +303,36 @@ async function shareAdmin(){
   try{
     const key=email.replace(/\./g,'_');
     await db.ref(`sharedAdmins/${key}`).set({email,addedAt:new Date().toISOString(),addedBy:S.user.email,active:true,plan:'free',planExpiry:new Date(Date.now()+30*864e5).toISOString()});
-    // Generate link
     const link=`${location.origin}${location.pathname}?admin=${encodeURIComponent(email)}`;
-    set({shareSaving:false,shareEmail:'',generatedLink:link});
+    set({shareSaving:false,shareEmail:'',genLink:link});
     toast('Access shared! Link generated.');
   }catch(e){set({shareSaving:false,shareErr:e.message||'Failed.'});}
 }
 async function revokeAdmin(key){await db.ref(`sharedAdmins/${key}`).remove();toast('Access revoked.');}
 async function markPaid(key){
-  const expiry=new Date(Date.now()+30*864e5).toISOString();
-  const now=new Date().toISOString();
+  const expiry=new Date(Date.now()+30*864e5).toISOString(),now=new Date().toISOString();
   await db.ref(`sharedAdmins/${key}`).update({plan:'paid',planExpiry:expiry,lastPaid:now});
   await db.ref(`payments/pay_${Date.now()}`).set({adminEmail:key,amount:999,date:now,status:'paid',plan:'monthly'});
   toast('Payment marked. Plan extended 30 days.');
 }
+async function saveSiteSettings(){
+  set({settingsSaving:true});
+  try{await db.ref('siteSettings').set(S.siteSettings);toast('Website settings saved!');}
+  catch(e){toast('Save failed: '+e.message,'err');}
+  set({settingsSaving:false});
+}
 async function delReview(id){
-  const k=S.myAdminData.hotelId||S.myAdminData.key;
+  const k=S.myAdmin.hotelId||S.myAdmin.key;
   await db.ref(`reviews/${k}/${id}`).remove();
-  set({deleteId:null,deleteType:''});toast('Review removed.');
+  set({delId:null,delType:''});toast('Review removed.');
 }
 async function updBooking(id,status){await db.ref(`bookings/${id}`).update({status});toast('Booking '+status+'!');}
-async function delBooking(id){await db.ref(`bookings/${id}`).remove();set({deleteId:null,deleteType:''});toast('Booking removed.');}
+async function delBooking(id){await db.ref(`bookings/${id}`).remove();set({delId:null,delType:''});toast('Booking removed.');}
 
-// ═══════════════════════ UTILS ═══════════════════════
-function toast(msg,t='success'){set({toast:{msg,t}});setTimeout(()=>set({toast:null}),3500);}
+// ══════════════════════════════════════════
+// UTILS
+// ══════════════════════════════════════════
+function toast(msg,t='ok'){set({toast:{msg,t}});setTimeout(()=>set({toast:null}),3500);}
 function el(tag,a,...c){
   const e=document.createElement(tag);
   if(a)Object.keys(a).forEach(k=>{
@@ -285,9 +347,8 @@ function el(tag,a,...c){
 }
 function svg(paths,sz=16){
   const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
-  ['width','height'].forEach(a=>s.setAttribute(a,sz));
-  s.setAttribute('viewBox','0 0 24 24');s.setAttribute('fill','none');
-  s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2');
+  s.setAttribute('width',sz);s.setAttribute('height',sz);s.setAttribute('viewBox','0 0 24 24');
+  s.setAttribute('fill','none');s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2');
   s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');
   paths.forEach(d=>{const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',d);s.appendChild(p);});
   return s;
@@ -300,7 +361,8 @@ const IC={
   share:['M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8','M16 6l-4-4-4 4','M12 2v13'],
   bar:['M18 20V10','M12 20V4','M6 20v-6'],
   book:['M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z','M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z'],
-  star:['M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'],
+  settings:['M12 15a3 3 0 100-6 3 3 0 000 6z','M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z'],
+  globe:['M12 2a10 10 0 100 20A10 10 0 0012 2z','M2 12h20','M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z'],
   plus:['M12 5v14','M5 12h14'],
   edit:['M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7','M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z'],
   trash:['M3 6h18','M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6','M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2'],
@@ -310,48 +372,45 @@ const IC={
   eyeoff:['M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94','M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19','M1 1l22 22'],
   logout:['M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4','M16 17l5-5-5-5','M21 12H9'],
   warn:['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z','M12 9v4','M12 17h.01'],
-  copy:['M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V8l-4-4z','M14 2v4a2 2 0 002 2h4','M8 2h8'],
+  copy:['M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V8l-4-4z','M14 2v4a2 2 0 002 2h4'],
   save:['M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z','M17 21v-8H7v8','M7 3v5h8'],
   act:['M22 12h-4l-3 9L9 3l-3 9H2'],
-  shield:['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10'],
+  paint:['M12 19l7-7 3 3-7 7-3-3z','M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z','M2 2l7.586 7.586','M11 11a2 2 0 100 4 2 2 0 000-4z'],
+  bell:['M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9','M13.73 21a2 2 0 01-3.46 0'],
   plan:['M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z','M1 10h22'],
-  set2:['M12 15a3 3 0 100-6 3 3 0 000 6z','M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z'],
+  star:['M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'],
 };
 function ic(n,s=16){return svg(IC[n]||[],s);}
 function sp(s=14,c1='rgba(255,255,255,.3)',c2='#fff'){const x=document.createElement('span');x.className='spin';x.style.cssText=`width:${s}px;height:${s}px;border:2px solid ${c1};border-top-color:${c2};border-radius:50%;`;return x;}
-function sp2(){return sp(28,'var(--line)','var(--accent)');}
+function sp2(){return sp(28,'var(--line)','var(--ac)');}
 function fmt(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}catch{return'—';}}
 function fmtT(d){if(!d)return'—';try{return new Date(d).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch{return'—';}}
-function lbl(t){return el('label',{style:{fontSize:'10px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'.06em',color:'var(--ink-faint)',display:'block',marginBottom:'5px'}},t);}
-function sec(t){return el('p',{style:{fontSize:'10px',fontWeight:'900',textTransform:'uppercase',letterSpacing:'.08em',color:'var(--ink-faint)',marginBottom:'8px'}},t);}
+function lbl(t){return el('label',{style:{fontSize:'10px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'.06em',color:'var(--ink-f)',display:'block',marginBottom:'5px'}},t);}
 function starsStr(n){return'★'.repeat(Math.round(n||0))+'☆'.repeat(5-Math.round(n||0));}
 
-// ═══════════════════════ LOGIN SCREEN ═══════════════════════
+// ══════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════
 function renderLogin(){
-  const isHotel=IS_HOTEL_MODE;
-  const ownerEmail=isHotel?decodeURIComponent(HOTEL_EMAIL):'';
-  return el('div',{style:{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:isHotel?'var(--paper)':'linear-gradient(135deg,#1a1916 0%,#353330 100%)',padding:'20px'}},
-    el('div',{style:{width:'100%',maxWidth:'380px',background:'var(--card)',borderRadius:'20px',padding:'28px',boxShadow:'var(--sh3)',border:'1px solid var(--line)'},class:'fi'},
-      // Logo
+  const isH=IS_HOTEL;
+  return el('div',{style:{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:isH?'var(--paper)':'linear-gradient(135deg,#1a1916,#353330)',padding:'20px'}},
+    el('div',{style:{width:'100%',maxWidth:'380px',background:'var(--card)',borderRadius:'20px',padding:'28px',boxShadow:'var(--s3)',border:'1px solid var(--line)'},class:'fi'},
       el('div',{style:{display:'flex',alignItems:'center',gap:'12px',marginBottom:'22px',justifyContent:'center'}},
         el('div',{style:{width:'46px',height:'46px',borderRadius:'13px',background:'linear-gradient(135deg,#E8631C,#F2A65A)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'900',fontSize:'21px',fontFamily:'Fraunces,serif'}},'H'),
-        el('div',{},
-          el('h1',{style:{fontSize:'18px',color:'var(--ink)'}},isHotel?'Hotel Admin Panel':'Super Admin'),
-          el('p',{style:{fontSize:'11px',color:'var(--ink-faint)'}},isHotel?'Powered by HotelRadar':'HotelRadar Control Panel')
-        )
+        el('div',{},el('h1',{style:{fontSize:'18px',color:'var(--ink)'}},isH?'Hotel Admin':'Super Admin'),el('p',{style:{fontSize:'11px',color:'var(--ink-f)'}},isH?'Powered by HotelRadar':'HotelRadar Control Panel'))
       ),
-      // Info
-      isHotel?el('div',{style:{padding:'10px 13px',background:'var(--accent-dim)',border:'1px solid rgba(232,99,28,.2)',borderRadius:'var(--r-sm)',marginBottom:'16px'}},
-        el('p',{style:{fontSize:'11.5px',color:'var(--accent-ink)',lineHeight:'1.6',fontWeight:'600'}},`👋 This panel is for: ${ownerEmail}`+'\nSign in with that Google account only.')
+      isH?el('div',{style:{padding:'10px 13px',background:'var(--acd)',border:'1px solid rgba(232,99,28,.2)',borderRadius:'var(--r)',marginBottom:'16px'}},
+        el('p',{style:{fontSize:'11.5px',color:'var(--aci)',lineHeight:'1.6',fontWeight:'600'}},'👋 This panel is for:\n'+decodeURIComponent(HOTEL_EMAIL)+'\nSign in with that Google account.')
       ):null,
-      // Error
       S.lErr?el('div',{style:{display:'flex',alignItems:'center',gap:'7px',padding:'9px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',marginBottom:'13px',fontSize:'12px',color:'#DC2626'}},ic('warn',13),S.lErr):null,
-      // Google
+      // Google btn
       el('button',{
         onClick:doGoogle,disabled:S.gLoad,
-        style:{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',padding:'11px',background:'var(--card)',border:'1px solid var(--line)',borderRadius:'var(--r-sm)',fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'13px',cursor:'pointer',transition:'background .12s'}
+        style:{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',padding:'12px',background:'var(--card)',border:'2px solid var(--line)',borderRadius:'var(--r)',fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'13px',cursor:'pointer',transition:'all .15s',boxShadow:'var(--s1)'},
+        onMouseenter:e=>e.currentTarget.style.borderColor='var(--ac)',
+        onMouseleave:e=>e.currentTarget.style.borderColor='var(--line)',
       },
-        S.gLoad?sp(16,'#ccc','#555'):el('svg',{width:'18',height:'18',viewBox:'0 0 48 48'},
+        S.gLoad?sp(18,'#ccc','#555'):el('svg',{width:'20',height:'20',viewBox:'0 0 48 48'},
           el('path',{fill:'#EA4335',d:'M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'}),
           el('path',{fill:'#4285F4',d:'M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'}),
           el('path',{fill:'#FBBC05',d:'M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'}),
@@ -359,168 +418,235 @@ function renderLogin(){
         ),
         S.gLoad?'Signing in...':'Continue with Google'
       ),
-      // Divider
       el('div',{style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'13px'}},
         el('div',{style:{flex:1,height:'1px',background:'var(--line)'}}),
-        el('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-faint)',textTransform:'uppercase'}},'or'),
+        el('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',textTransform:'uppercase'}},'or email'),
         el('div',{style:{flex:1,height:'1px',background:'var(--line)'}})
       ),
-      // Email+pass
       el('div',{style:{display:'flex',flexDirection:'column',gap:'9px'}},
         el('input',{class:'inp',type:'email',placeholder:'Email address',value:S.lEmail,onInput:e=>set({lEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&doLogin()}),
         el('div',{style:{position:'relative'}},
           el('input',{class:'inp',type:S.lShowPass?'text':'password',placeholder:'Password',style:{paddingRight:'40px'},value:S.lPass,onInput:e=>set({lPass:e.target.value}),onKeydown:e=>e.key==='Enter'&&doLogin()}),
-          el('button',{onClick:()=>set({lShowPass:!S.lShowPass}),style:{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',color:'var(--ink-faint)'}},ic(S.lShowPass?'eyeoff':'eye',14))
+          el('button',{onClick:()=>set({lShowPass:!S.lShowPass}),style:{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',color:'var(--ink-f)'}},ic(S.lShowPass?'eyeoff':'eye',14))
         ),
-        el('button',{class:'btn ba',style:{width:'100%',justifyContent:'center'},disabled:S.lLoading,onClick:doLogin},
-          S.lLoading?sp():null,S.lLoading?'Signing in...':'Sign In')
+        el('button',{class:'btn ba btn-w',disabled:S.lLoading,onClick:doLogin},S.lLoading?sp():null,S.lLoading?'Signing in...':'Sign In')
       )
     )
   );
 }
 
-// ═══════════════════════ SUPER ADMIN LAYOUT ═══════════════════════
+// ══════════════════════════════════════════
+// SUPER ADMIN NAV DATA
+// ══════════════════════════════════════════
+const SUPER_NAVS=[
+  {id:'dashboard',l:'Dashboard',i:'dash'},
+  {id:'hotels',l:'All Hotels',i:'hotel'},
+  {id:'payments',l:'Payments',i:'money'},
+  {id:'admins',l:'Hotel Admins',i:'users'},
+  {id:'share',l:'Share Access',i:'share'},
+  {id:'analytics',l:'Analytics',i:'bar'},
+  {id:'bookings',l:'Bookings',i:'book'},
+  {id:'website',l:'Website Settings',i:'globe'},
+  {id:'activity',l:'Activity Log',i:'act'},
+];
+
+// ══════════════════════════════════════════
+// SIDEBAR (desktop only)
+// ══════════════════════════════════════════
 function renderSidebar(){
-  const navs=[
-    {id:'dashboard',l:'Dashboard',i:'dash'},
-    {id:'hotels',l:'All Hotels',i:'hotel',bdg:S.hotels.filter(h=>!h.approved).length},
-    {id:'payments',l:'Payments & Plans',i:'money'},
-    {id:'admins',l:'Hotel Admins',i:'users'},
-    {id:'share',l:'Share Access',i:'share'},
-    {id:'analytics',l:'Analytics',i:'bar'},
-    {id:'bookings',l:'Bookings',i:'book'},
-    {id:'activity',l:'Activity Log',i:'act'},
-  ];
+  const navs=IS_HOTEL?[]:SUPER_NAVS;
   return el('div',{class:'sidebar'},
     el('div',{style:{padding:'14px 14px 8px',borderBottom:'1px solid var(--line)',marginBottom:'6px'}},
       el('div',{style:{display:'flex',alignItems:'center',gap:'9px'}},
         el('div',{style:{width:'34px',height:'34px',borderRadius:'9px',background:'linear-gradient(135deg,#E8631C,#F2A65A)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'900',fontSize:'16px',fontFamily:'Fraunces,serif'}},'H'),
         el('div',{},
           el('p',{style:{fontSize:'12px',fontWeight:'700',fontFamily:'Fraunces,serif',color:'var(--ink)'}},'HotelRadar'),
-          el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--accent)',textTransform:'uppercase',letterSpacing:'.05em'}},'Super Admin')
+          el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ac)',textTransform:'uppercase',letterSpacing:'.05em'}},'Super Admin')
         )
       )
     ),
     el('div',{style:{flex:1,padding:'4px 0'}},
-      ...navs.map(n=>el('div',{class:'ni'+(S.tab===n.id?' on':''),onClick:()=>set({tab:n.id})},
-        el('span',{},ic(n.i,14)),n.l,
-        n.bdg>0?el('span',{class:'bdg'},n.bdg):null
-      ))
+      ...navs.map(n=>{
+        const bdg=n.id==='hotels'?S.hotels.filter(h=>!h.approved).length:0;
+        return el('div',{class:'ni'+(S.tab===n.id?' on':''),onClick:()=>set({tab:n.id})},
+          el('span',{},ic(n.i,14)),n.l,
+          bdg>0?el('span',{class:'bdg'},bdg):null
+        );
+      })
     ),
     el('div',{style:{padding:'10px 8px',borderTop:'1px solid var(--line)'}},
       el('div',{class:'ni',onClick:doSignOut},ic('logout',14),'Sign Out'))
   );
 }
 
-function renderTopbar(){
-  const titles={dashboard:'Dashboard',hotels:'All Hotels',payments:'Payments & Plans',admins:'Hotel Admins',share:'Share Admin Access',analytics:'Analytics',bookings:'All Bookings',activity:'Activity Log'};
-  return el('div',{class:'topbar'},
-    el('div',{},el('h2',{style:{fontSize:'16px',fontFamily:'Fraunces,serif',color:'var(--ink)'}},IS_HOTEL_MODE?(S.myHotel?.name||'Hotel Panel'):titles[S.tab]||'')),
-    el('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},
-      el('div',{style:{width:'30px',height:'30px',borderRadius:'50%',background:'var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:'12px',fontWeight:'700'}},
-        (S.user?.email||'A')[0].toUpperCase()),
-      el('button',{style:{color:'var(--ink-soft)',display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',fontWeight:'600'},onClick:doSignOut},ic('logout',13))
+// ══════════════════════════════════════════
+// MOBILE BOTTOM NAV
+// ══════════════════════════════════════════
+function renderMobNav(){
+  const navs=IS_HOTEL?[
+    {id:'dashboard',l:'Home',i:'dash'},
+    {id:'hotel',l:'Hotel',i:'hotel'},
+    {id:'bookings',l:'Bookings',i:'book'},
+    {id:'reviews',l:'Reviews',i:'star'},
+    {id:'plan',l:'Plan',i:'plan'},
+    {id:'settings',l:'Settings',i:'settings'},
+  ]:SUPER_NAVS;
+
+  return el('div',{class:'mob-nav'},
+    el('div',{class:'mob-nav-inner'},
+      ...navs.map(n=>
+        el('div',{class:'mni'+(S.tab===n.id?' on':''),onClick:()=>set({tab:n.id})},
+          ic(n.i,18),
+          el('span',{},n.l)
+        )
+      ),
+      // Sign out at end
+      el('div',{class:'mni',onClick:doSignOut},ic('logout',18),el('span',{},'Logout'))
     )
   );
 }
 
-// ═══════════════════════ SUPER ADMIN TABS ═══════════════════════
-
-function renderDashboardS(){
-  const stats=[
-    {v:S.hotels.length,l:'Hotels',c:'var(--accent)',i:'hotel'},
-    {v:S.sharedAdmins.length,l:'Admins',c:'var(--blue)',i:'users'},
-    {v:'₹'+S.payments.reduce((s,p)=>s+Number(p.amount||0),0).toLocaleString('en-IN'),l:'Revenue',c:'var(--good)',i:'money'},
-    {v:S.bookings.length,l:'Bookings',c:'var(--purple)',i:'book'},
-  ];
-  const pending=S.hotels.filter(h=>!h.approved);
-  const topQ=getTopQ();
-  return el('div',{class:'content fi'},
-    el('div',{class:'g3',style:{marginBottom:'20px'}},
-      ...stats.map(s=>el('div',{class:'card scard'},el('div',{style:{color:s.c}},ic(s.i,20)),el('div',{class:'sval',style:{color:s.c}},String(s.v)),el('div',{class:'slbl'},s.l)))
+// ══════════════════════════════════════════
+// MOBILE TOP BAR
+// ══════════════════════════════════════════
+function renderMobTop(){
+  const titles=IS_HOTEL?{dashboard:'Dashboard',hotel:'My Hotel',bookings:'Bookings',reviews:'Reviews',plan:'My Plan',settings:'Settings'}:{dashboard:'Dashboard',hotels:'Hotels',payments:'Payments',admins:'Hotel Admins',share:'Share Access',analytics:'Analytics',bookings:'Bookings',website:'Website Settings',activity:'Activity Log'};
+  return el('div',{class:'mob-top'},
+    el('div',{style:{display:'flex',alignItems:'center',gap:'10px'}},
+      el('div',{style:{width:'30px',height:'30px',borderRadius:'8px',background:'linear-gradient(135deg,#E8631C,#F2A65A)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'900',fontSize:'14px',fontFamily:'Fraunces,serif'}},'H'),
+      el('h2',{style:{fontSize:'15px',fontFamily:'Fraunces,serif',color:'var(--ink)'}},titles[S.tab]||'Admin')
     ),
-    el('div',{class:'g2',style:{gap:'14px',marginBottom:'20px'}},
-      // Pending
+    el('div',{style:{width:'30px',height:'30px',borderRadius:'50%',background:'var(--ac)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:'12px',fontWeight:'700'}},(S.user?.email||'A')[0].toUpperCase())
+  );
+}
+
+// ══════════════════════════════════════════
+// DESKTOP TOPBAR
+// ══════════════════════════════════════════
+function renderTopbar(){
+  const titles={dashboard:'Dashboard',hotels:'All Hotels',payments:'Payments & Plans',admins:'Hotel Admins',share:'Share Admin Access',analytics:'Analytics',bookings:'All Bookings',website:'Website Settings',activity:'Activity Log'};
+  return el('div',{class:'topbar'},
+    el('h2',{style:{fontSize:'16px',fontFamily:'Fraunces,serif',color:'var(--ink)'}},titles[S.tab]||''),
+    el('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},
+      el('div',{style:{width:'30px',height:'30px',borderRadius:'50%',background:'var(--ac)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:'12px',fontWeight:'700'}},(S.user?.email||'A')[0].toUpperCase()),
+      el('button',{style:{color:'var(--ink-s)',display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',fontWeight:'600'},onClick:doSignOut},ic('logout',13),'Sign Out')
+    )
+  );
+}
+
+// ══════════════════════════════════════════
+// SUPER ADMIN — DASHBOARD
+// ══════════════════════════════════════════
+function renderDashS(){
+  const pending=S.hotels.filter(h=>!h.approved);
+  const totalRev=S.payments.reduce((s,p)=>s+Number(p.amount||0),0);
+  const topQ=getTopQ();
+  const due=S.sharedAdmins.filter(a=>a.planExpiry&&new Date(a.planExpiry)<new Date());
+  return el('div',{class:'content fi'},
+    el('div',{class:'g3',style:{marginBottom:'16px'}},
+      mkStat(S.hotels.length,'Hotels','var(--ac)','hotel'),
+      mkStat(S.sharedAdmins.length,'Admins','var(--blue)','users'),
+      mkStat('₹'+totalRev.toLocaleString('en-IN'),'Revenue','var(--good)','money'),
+      mkStat(S.bookings.length,'Bookings','var(--pur)','book')
+    ),
+    // Pending + searches
+    el('div',{class:'g2',style:{gap:'14px',marginBottom:'14px'}},
       el('div',{class:'card',style:{padding:'14px'}},
         el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}},
           el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Pending Approval'),
-          el('span',{class:'b ba2'},pending.length)
+          el('span',{class:'b b-a'},pending.length)
         ),
-        pending.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'16px 0'}},'All hotels approved ✓'):
+        pending.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-f)',textAlign:'center',padding:'14px 0'}},'All approved ✓'):
         el('div',{},pending.slice(0,4).map(h=>
           el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px',padding:'7px 0',borderBottom:'1px solid var(--line)'}},
-            el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},h.name),el('p',{style:{fontSize:'10px',color:'var(--ink-soft)'}},h.city)),
+            el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},h.name),el('p',{style:{fontSize:'10px',color:'var(--ink-s)'}},h.city)),
             el('div',{style:{display:'flex',gap:'4px'}},
-              el('button',{class:'btn bg',style:{padding:'4px 9px',fontSize:'10px'},onClick:async()=>{await togField(h.id,'approved',true);toast(h.name+' approved!');}},ic('check',10),'OK'),
-              el('button',{class:'btn br',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>set({deleteId:h.id,deleteType:'hotel'})},ic('trash',10))
+              el('button',{class:'btn bg',style:{padding:'4px 9px',fontSize:'10px'},onClick:async()=>{await togF(h.id,'approved',true);toast(h.name+' approved!');}},ic('check',10),'OK'),
+              el('button',{class:'btn br',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>set({delId:h.id,delType:'hotel'})},ic('trash',10))
             )
           )
         ))
       ),
-      // Top searches
       el('div',{class:'card',style:{padding:'14px'}},
         el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'Top Searches'),
-        topQ.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'16px 0'}},'No search data yet'):
+        topQ.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-f)',textAlign:'center',padding:'14px 0'}},'No data yet'):
         el('div',{},topQ.slice(0,6).map((s,i)=>
           el('div',{style:{display:'flex',alignItems:'center',gap:'8px',padding:'5px 0',borderBottom:i<5?'1px solid var(--line)':'none'}},
-            el('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-faint)',width:'14px'}},(i+1)+'.'),
+            el('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',width:'14px'}},(i+1)+'.'),
             el('span',{style:{flex:1,fontSize:'12px',fontWeight:'600'}},s.q),
-            el('span',{class:'b bb2'},s.c)
+            el('span',{class:'b b-b'},s.c+'x')
           )
         ))
       )
     ),
-    // Revenue + overdue
-    el('div',{class:'card',style:{padding:'14px',marginBottom:'16px'}},
-      el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'Overdue Accounts'),
-      (() => {
-        const due=S.sharedAdmins.filter(a=>a.planExpiry&&new Date(a.planExpiry)<new Date());
-        return due.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'12px 0'}},'No overdue accounts ✓'):
-        el('div',{},due.map(a=>
-          el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px',padding:'8px 0',borderBottom:'1px solid var(--line)'}},
-            el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},a.email),el('p',{style:{fontSize:'10px',color:'#DC2626'}},'Expired: '+fmt(a.planExpiry))),
-            el('button',{class:'btn bg',style:{padding:'5px 10px',fontSize:'10px'},onClick:()=>markPaid(a.key)},ic('check',10),'Mark Paid')
-          )
-        ))
-      })()
+    // Overdue
+    due.length>0&&el('div',{class:'card',style:{padding:'14px',marginBottom:'14px',background:'#FEF2F2',border:'1px solid #FECACA'}},
+      el('h3',{style:{fontSize:'13px',color:'#DC2626',marginBottom:'10px',display:'flex',alignItems:'center',gap:'6px'}},ic('warn',14),'Overdue Payments'),
+      el('div',{},due.map(a=>
+        el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px',padding:'7px 0',borderBottom:'1px solid #FECACA'}},
+          el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},a.email),el('p',{style:{fontSize:'10px',color:'#DC2626'}},'Expired: '+fmt(a.planExpiry))),
+          el('button',{class:'btn bg',style:{padding:'5px 10px',fontSize:'10px'},onClick:()=>markPaid(a.key)},ic('check',10),'Mark Paid')
+        )
+      ))
+    ),
+    // Quick actions
+    el('div',{class:'g2'},
+      el('button',{style:{display:'flex',alignItems:'center',gap:'8px',padding:'14px',background:'var(--acd)',border:'1px solid rgba(232,99,28,.2)',borderRadius:'var(--r2)',fontSize:'13px',fontWeight:'700',color:'var(--aci)',cursor:'pointer'},
+        onClick:()=>set({showHotelForm:true,editHotel:null,hf:eH(),hfErr:'',amenityInput:''})},
+        ic('plus',16),'Add Hotel'),
+      el('button',{style:{display:'flex',alignItems:'center',gap:'8px',padding:'14px',background:'var(--card)',border:'1px solid var(--line)',borderRadius:'var(--r2)',fontSize:'13px',fontWeight:'700',color:'var(--ink)',cursor:'pointer'},
+        onClick:()=>set({tab:'share'})},
+        ic('share',16),'Share Access')
     )
   );
 }
 
 function getTopQ(){
-  const c={};
-  S.searchLogs.forEach(l=>{if(l.query)c[l.query]=(c[l.query]||0)+1;});
+  const c={};S.searchLogs.forEach(l=>{if(l.query)c[l.query]=(c[l.query]||0)+1;});
   return Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([q,count])=>({q,c:count}));
 }
+function mkStat(v,l,color,i){
+  return el('div',{class:'card scard'},
+    el('div',{style:{color,marginBottom:'6px'}},ic(i,20)),
+    el('div',{class:'sval',style:{color}},String(v)),
+    el('div',{class:'slbl'},l)
+  );
+}
 
+// ══════════════════════════════════════════
+// SUPER ADMIN — HOTELS
+// ══════════════════════════════════════════
 function renderHotelsS(){
   const filtered=S.hotels.filter(h=>{
     const q=(S.hotelSearch||'').toLowerCase();
-    return !q||h.name?.toLowerCase().includes(q)||h.city?.toLowerCase().includes(q)||(h.phone||'').includes(q);
+    const ms=!q||h.name?.toLowerCase().includes(q)||h.city?.toLowerCase().includes(q)||(h.phone||'').includes(q);
+    const mf=S.hotelFilter==='all'?true:S.hotelFilter==='approved'?h.approved:S.hotelFilter==='pending'?!h.approved:!h.active;
+    return ms&&mf;
   });
   return el('div',{class:'content fi'},
     el('div',{style:{display:'flex',gap:'10px',marginBottom:'14px',flexWrap:'wrap'}},
       el('div',{style:{position:'relative',flex:1,minWidth:'160px'}},
-        el('input',{class:'inp',placeholder:'Search hotels...',value:S.hotelSearch||'',onInput:e=>set({hotelSearch:e.target.value})})
-      ),
-      el('button',{class:'btn ba',onClick:()=>set({showAddHotel:true,editHotel:null,hForm:eHotel(),hFormErr:'',amenityInput:''})},ic('plus',13),'Add Hotel')
+        el('input',{class:'inp',placeholder:'Search hotels...',value:S.hotelSearch||'',onInput:e=>set({hotelSearch:e.target.value})})),
+      el('select',{class:'inp',style:{width:'auto'},onChange:e=>set({hotelFilter:e.target.value})},
+        ...['all','approved','pending','inactive'].map(v=>el('option',{value:v,...(S.hotelFilter===v?{selected:true}:{})},v.charAt(0).toUpperCase()+v.slice(1)))),
+      el('button',{class:'btn ba',onClick:()=>set({showHotelForm:true,editHotel:null,hf:eH(),hfErr:'',amenityInput:''})},ic('plus',13),'Add Hotel')
     ),
     el('div',{style:{overflowX:'auto'}},
       el('table',{class:'tbl'},
         el('thead',{},el('tr',{},['','Hotel','City','Price','Plan','Status','Actions'].map(h=>el('th',{},h)))),
         el('tbody',{},
-          filtered.length===0?[el('tr',{},el('td',{colspan:'7',style:{textAlign:'center',color:'var(--ink-faint)',padding:'40px'}},'No hotels'))]:
+          filtered.length===0?[el('tr',{},el('td',{colspan:'7',style:{textAlign:'center',color:'var(--ink-f)',padding:'40px'}},'No hotels'))]:
           filtered.map(h=>el('tr',{},
             el('td',{style:{fontSize:'18px'}},h.emoji||'🏨'),
-            el('td',{},el('div',{style:{fontWeight:'700',fontSize:'12px'}},h.name),el('div',{style:{fontSize:'10px',color:'var(--ink-soft)'}},h.area||'')),
+            el('td',{},el('div',{style:{fontWeight:'700',fontSize:'12px'}},h.name),el('div',{style:{fontSize:'10px',color:'var(--ink-s)'}},h.area||'')),
             el('td',{},h.city),
             el('td',{style:{fontWeight:'700'}},'₹'+Number(h.price||0).toLocaleString('en-IN')),
-            el('td',{},el('span',{class:'b '+(h.plan==='spotlight'?'bp2':h.plan==='priority'?'bb2':'ba2')},h.plan||'basic')),
-            el('td',{},h.approved?el('span',{class:'b bg2'},'Live'):el('span',{class:'b br2'},'Pending')),
+            el('td',{},el('span',{class:'b '+(h.plan==='spotlight'?'b-p':h.plan==='priority'?'b-b':'b-a')},h.plan||'basic')),
+            el('td',{},h.approved?el('span',{class:'b b-g'},'Live'):el('span',{class:'b b-r'},'Pending')),
             el('td',{},el('div',{style:{display:'flex',gap:'4px'}},
-              el('button',{class:'btn',style:{padding:'4px 7px',background:h.approved?'var(--good-dim)':'#FEF3C7',color:h.approved?'var(--good)':'#92400E'},onClick:async()=>{await togField(h.id,'approved',!h.approved);toast(h.approved?'Unapproved':'Approved!');}},ic(h.approved?'check':'warn',11)),
-              el('button',{class:'btn',style:{padding:'4px 7px',background:'var(--paper-dim)',color:'var(--ink-soft)'},onClick:()=>set({editHotel:h,showAddHotel:true,hForm:{...h,price:String(h.price||''),rating:String(h.rating||'4.5'),reviewCount:String(h.reviewCount||0)},hFormErr:'',amenityInput:''})},ic('edit',11)),
-              el('button',{class:'btn',style:{padding:'4px 7px',background:'#FEF2F2',color:'#EF4444'},onClick:()=>set({deleteId:h.id,deleteType:'hotel'})},ic('trash',11))
+              el('button',{class:'btn',style:{padding:'4px 7px',background:h.approved?'var(--gd)':'#FEF3C7',color:h.approved?'var(--good)':'#92400E'},onClick:async()=>{await togF(h.id,'approved',!h.approved);toast(h.approved?'Unapproved':'Approved!');}},ic(h.approved?'check':'warn',11)),
+              el('button',{class:'btn',style:{padding:'4px 7px',background:'var(--pd)',color:'var(--ink-s)'},onClick:()=>set({editHotel:h,showHotelForm:true,hf:{...h,price:String(h.price||''),rating:String(h.rating||'4.5'),reviewCount:String(h.reviewCount||0)},hfErr:'',amenityInput:''})},ic('edit',11)),
+              el('button',{class:'btn',style:{padding:'4px 7px',background:'#FEF2F2',color:'#EF4444'},onClick:()=>set({delId:h.id,delType:'hotel'})},ic('trash',11))
             ))
           ))
         )
@@ -529,27 +655,30 @@ function renderHotelsS(){
   );
 }
 
+// ══════════════════════════════════════════
+// SUPER ADMIN — PAYMENTS
+// ══════════════════════════════════════════
 function renderPaymentsS(){
   const due=S.sharedAdmins.filter(a=>a.planExpiry&&new Date(a.planExpiry)<new Date());
+  const total=S.payments.reduce((s,p)=>s+Number(p.amount||0),0);
   return el('div',{class:'content fi'},
     el('div',{class:'g3',style:{marginBottom:'16px'}},
-      el('div',{class:'card scard'},el('div',{style:{color:'var(--good)'}},ic('money',20)),el('div',{class:'sval',style:{color:'var(--good)'}},'₹'+S.payments.reduce((s,p)=>s+Number(p.amount||0),0).toLocaleString('en-IN')),el('div',{class:'slbl'},'Total Earned')),
-      el('div',{class:'card scard'},el('div',{style:{color:'var(--blue)'}},ic('check',20)),el('div',{class:'sval',style:{color:'var(--blue)'}},S.payments.length),el('div',{class:'slbl'},'Payments')),
-      el('div',{class:'card scard'},el('div',{style:{color:'#EF4444'}},ic('warn',20)),el('div',{class:'sval',style:{color:'#EF4444'}},due.length),el('div',{class:'slbl'},'Overdue'))
+      mkStat('₹'+total.toLocaleString('en-IN'),'Total Earned','var(--good)','money'),
+      mkStat(S.payments.length,'Payments','var(--blue)','check'),
+      mkStat(due.length,'Overdue','#EF4444','warn')
     ),
     el('div',{class:'card',style:{overflow:'hidden',marginBottom:'14px'}},
       el('div',{style:{padding:'12px 16px',borderBottom:'1px solid var(--line)'}},el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Hotel Admin Plans')),
       el('table',{class:'tbl'},
-        el('thead',{},el('tr',{},['Email','Plan','Expiry','Status','Actions'].map(h=>el('th',{},h)))),
+        el('thead',{},el('tr',{},['Email','Plan','Expiry','Actions'].map(h=>el('th',{},h)))),
         el('tbody',{},
-          S.sharedAdmins.length===0?[el('tr',{},el('td',{colspan:'5',style:{textAlign:'center',color:'var(--ink-faint)',padding:'30px'}},'No admins yet'))]:
+          S.sharedAdmins.length===0?[el('tr',{},el('td',{colspan:'4',style:{textAlign:'center',color:'var(--ink-f)',padding:'30px'}},'No admins yet'))]:
           S.sharedAdmins.map(a=>{
             const exp=a.planExpiry&&new Date(a.planExpiry)<new Date();
             return el('tr',{},
               el('td',{style:{fontWeight:'600',fontSize:'12px'}},a.email),
-              el('td',{},el('span',{class:'b '+(a.plan==='paid'?'bg2':'ba2')},a.plan==='paid'?'Paid ₹999/mo':'Free Trial')),
+              el('td',{},el('span',{class:'b '+(a.plan==='paid'?'b-g':'b-a')},a.plan==='paid'?'Paid':'Free')),
               el('td',{style:{color:exp?'#EF4444':'var(--ink)',fontSize:'12px'}},fmt(a.planExpiry)+(exp?' ⚠️':'')),
-              el('td',{},el('span',{class:'b '+(a.active?'bg2':'br2')},a.active?'Active':'Inactive')),
               el('td',{},el('div',{style:{display:'flex',gap:'4px'}},
                 el('button',{class:'btn bg',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>markPaid(a.key)},ic('check',10),'Paid'),
                 el('button',{class:'btn br',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>revokeAdmin(a.key)},ic('x',10),'Revoke')
@@ -567,33 +696,39 @@ function renderPaymentsS(){
           el('td',{},p.adminEmail||'—'),
           el('td',{style:{fontWeight:'700',color:'var(--good)'}},'₹'+Number(p.amount||0).toLocaleString('en-IN')),
           el('td',{},fmt(p.date)),
-          el('td',{},el('span',{class:'b '+(p.status==='paid'?'bg2':'br2')},p.status||'—'))
+          el('td',{},el('span',{class:'b '+(p.status==='paid'?'b-g':'b-r')},p.status||'—'))
         )))
       )
     )
   );
 }
 
+// ══════════════════════════════════════════
+// SUPER ADMIN — ADMINS
+// ══════════════════════════════════════════
 function renderAdminsS(){
   return el('div',{class:'content fi'},
     el('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:'14px'}},
-      el('button',{class:'btn ba',onClick:()=>set({showShare:true,shareEmail:'',shareErr:'',generatedLink:''})},ic('share',13),'Share Admin Access')
+      el('button',{class:'btn ba',onClick:()=>set({showShare:true,shareEmail:'',shareErr:'',genLink:''})},ic('share',13),'Share Access')
     ),
     el('div',{class:'card',style:{overflow:'hidden'}},
       el('table',{class:'tbl'},
         el('thead',{},el('tr',{},['Email','Plan','Active','Expiry','Actions'].map(h=>el('th',{},h)))),
         el('tbody',{},
-          S.sharedAdmins.length===0?[el('tr',{},el('td',{colspan:'5',style:{textAlign:'center',color:'var(--ink-faint)',padding:'36px'}},'No hotel admins yet'))]:
+          S.sharedAdmins.length===0?[el('tr',{},el('td',{colspan:'5',style:{textAlign:'center',color:'var(--ink-f)',padding:'36px'}},'No hotel admins yet'))]:
           S.sharedAdmins.map(a=>{
             const exp=a.planExpiry&&new Date(a.planExpiry)<new Date();
+            const link=`${location.origin}${location.pathname}?admin=${encodeURIComponent(a.email)}`;
             return el('tr',{},
               el('td',{style:{fontWeight:'600',fontSize:'12px'}},a.email),
-              el('td',{},el('span',{class:'b '+(a.plan==='paid'?'bg2':'ba2')},a.plan==='paid'?'₹999/mo':'Free')),
+              el('td',{},el('span',{class:'b '+(a.plan==='paid'?'b-g':'b-a')},a.plan==='paid'?'₹999/mo':'Free')),
               el('td',{},el('div',{class:'tog'+(a.active?' on':''),onClick:()=>db.ref(`sharedAdmins/${a.key}`).update({active:!a.active})})),
               el('td',{style:{color:exp?'#EF4444':'var(--ink)',fontSize:'12px'}},fmt(a.planExpiry)+(exp?' ⚠️':'')),
               el('td',{},el('div',{style:{display:'flex',gap:'4px'}},
-                el('button',{class:'btn bg',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>markPaid(a.key)},ic('check',10),'Paid'),
-                el('button',{class:'btn br',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>revokeAdmin(a.key)},ic('x',10),'Revoke')
+                el('button',{class:'btn',style:{padding:'4px 8px',fontSize:'10px',background:'var(--bd)',color:'var(--blue)'},
+                  onClick:()=>{navigator.clipboard.writeText(link);toast('Link copied!');}},ic('copy',10),'Link'),
+                el('button',{class:'btn bg',style:{padding:'4px 8px',fontSize:'10px'},onClick:()=>markPaid(a.key)},ic('check',10),'Paid'),
+                el('button',{class:'btn br',style:{padding:'4px 8px',fontSize:'10px'},onClick:()=>revokeAdmin(a.key)},ic('x',10),'Revoke')
               ))
             );
           })
@@ -603,49 +738,46 @@ function renderAdminsS(){
   );
 }
 
+// ══════════════════════════════════════════
+// SUPER ADMIN — SHARE ACCESS
+// ══════════════════════════════════════════
 function renderShareS(){
   return el('div',{class:'content fi'},
     el('div',{class:'g2',style:{gap:'16px'}},
-      // Share form
       el('div',{class:'card',style:{padding:'18px'}},
         el('h3',{style:{fontSize:'15px',color:'var(--ink)',marginBottom:'6px'}},'Share Hotel Admin Access'),
-        el('p',{style:{fontSize:'12px',color:'var(--ink-soft)',lineHeight:'1.6',marginBottom:'14px'}},'Enter hotel owner Gmail → A unique link will be generated → Share that link with the hotel owner → They login with their Google account and get their own admin panel.'),
+        el('p',{style:{fontSize:'12px',color:'var(--ink-s)',lineHeight:'1.6',marginBottom:'14px'}},'Enter hotel owner Gmail → Unique link generated automatically → Share link with owner → They login with Google → See their own Hotel Admin Panel.'),
         S.shareErr?el('div',{style:{display:'flex',alignItems:'center',gap:'6px',padding:'8px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',marginBottom:'10px',fontSize:'12px',color:'#DC2626'}},ic('warn',12),S.shareErr):null,
         lbl('Hotel Owner Gmail *'),
-        el('input',{class:'inp',type:'email',placeholder:'hotelowner@gmail.com',value:S.shareEmail,style:{marginBottom:'12px'},onInput:e=>set({shareEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&shareAdmin()}),
-        el('button',{class:'btn ba',style:{width:'100%',justifyContent:'center'},disabled:S.shareSaving,onClick:shareAdmin},
-          S.shareSaving?sp():ic('share',13),S.shareSaving?'Sharing...':'Generate Link & Share Access'),
-        // Generated link
-        S.generatedLink?el('div',{style:{marginTop:'16px'}},
-          el('p',{style:{fontSize:'10px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'.06em',color:'var(--good)',marginBottom:'6px'}},'✅ Link Generated! Share this with hotel owner:'),
-          el('div',{class:'link-box'},
-            el('span',{style:{flex:1,wordBreak:'break-all'}},S.generatedLink),
-            el('button',{style:{flexShrink:0,display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'var(--accent)',color:'#fff',fontWeight:'700',fontSize:'11px',borderRadius:'6px'},
-              onClick:()=>{navigator.clipboard.writeText(S.generatedLink);toast('Link copied!');}},ic('copy',12),'Copy')
-          ),
-          el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginTop:'8px',lineHeight:'1.6'}},'📋 When hotel owner opens this link → They sign in with Google → They see their Hotel Admin Panel with Dashboard, Bookings, Reviews etc.')
+        el('input',{class:'inp',type:'email',placeholder:'owner@gmail.com',value:S.shareEmail,style:{marginBottom:'12px'},onInput:e=>set({shareEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&shareAdmin()}),
+        el('button',{class:'btn ba btn-w',disabled:S.shareSaving,onClick:shareAdmin},S.shareSaving?sp():ic('share',13),S.shareSaving?'Generating...':'Generate Link & Share Access'),
+        S.genLink?el('div',{style:{marginTop:'14px'}},
+          el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--good)',marginBottom:'6px'}},'✅ Link ready! Share with hotel owner:'),
+          el('div',{class:'lbx'},el('span',{style:{flex:1}},S.genLink),
+            el('button',{style:{flexShrink:0,display:'flex',alignItems:'center',gap:'3px',padding:'5px 9px',background:'var(--ac)',color:'#fff',fontWeight:'700',fontSize:'11px',borderRadius:'6px'},
+              onClick:()=>{navigator.clipboard.writeText(S.genLink);toast('Copied!');}},ic('copy',11),'Copy')
+          )
         ):null,
-        el('div',{style:{marginTop:'14px',padding:'12px',background:'var(--good-dim)',borderRadius:'var(--r-sm)'}},
-          el('p',{style:{fontSize:'11px',color:'var(--good)',lineHeight:'1.7',fontWeight:'600'}},'✓ 30 days FREE trial automatically\n✓ After trial: ₹999/month or ₹49/booking\n✓ Hotel owner sees only their hotel data\n✓ You stay in full control')
+        el('div',{style:{marginTop:'14px',padding:'12px',background:'var(--gd)',borderRadius:'var(--r)'}},
+          el('p',{style:{fontSize:'11px',color:'var(--good)',lineHeight:'1.7',fontWeight:'600'}},'✓ 30 days FREE trial\n✓ After: ₹999/month or ₹49/booking\n✓ They see only their hotel data')
         )
       ),
-      // Active admins
       el('div',{class:'card',style:{padding:'18px'}},
         el('h3',{style:{fontSize:'14px',color:'var(--ink)',marginBottom:'12px'}},'Active Hotel Admins ('+S.sharedAdmins.length+')'),
-        S.sharedAdmins.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'20px 0'}},'No hotel admins yet'):
+        S.sharedAdmins.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-f)',textAlign:'center',padding:'20px 0'}},'No hotel admins yet'):
         el('div',{style:{display:'flex',flexDirection:'column',gap:'8px'}},
           ...S.sharedAdmins.map(a=>{
             const exp=a.planExpiry&&new Date(a.planExpiry)<new Date();
             const link=`${location.origin}${location.pathname}?admin=${encodeURIComponent(a.email)}`;
-            return el('div',{style:{padding:'10px 12px',background:exp?'#FEF2F2':'var(--paper-dim)',borderRadius:'var(--r-sm)',border:'1px solid '+(exp?'#FECACA':'var(--line)')}},
-              el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px',marginBottom:'6px'}},
+            return el('div',{style:{padding:'10px 12px',background:exp?'#FEF2F2':'var(--pd)',borderRadius:'var(--r)',border:'1px solid '+(exp?'#FECACA':'var(--line)')}},
+              el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px'}},
                 el('div',{style:{minWidth:0}},
                   el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},a.email),
-                  el('p',{style:{fontSize:'10px',color:exp?'#DC2626':'var(--ink-soft)'}},exp?'⚠️ Expired: '+fmt(a.planExpiry):'Valid: '+fmt(a.planExpiry))
+                  el('p',{style:{fontSize:'10px',color:exp?'#DC2626':'var(--ink-s)'}},exp?'⚠️ Expired: '+fmt(a.planExpiry):'Valid: '+fmt(a.planExpiry))
                 ),
                 el('div',{style:{display:'flex',gap:'4px',flexShrink:0}},
-                  el('button',{style:{display:'flex',alignItems:'center',gap:'3px',padding:'4px 8px',background:'var(--blue-dim)',color:'var(--blue)',fontWeight:'700',fontSize:'10px',borderRadius:'6px'},
-                    onClick:()=>{navigator.clipboard.writeText(link);toast('Link copied!');}},ic('copy',10),'Link'),
+                  el('button',{style:{display:'flex',alignItems:'center',gap:'3px',padding:'4px 8px',background:'var(--bd)',color:'var(--blue)',fontWeight:'700',fontSize:'10px',borderRadius:'6px'},
+                    onClick:()=>{navigator.clipboard.writeText(link);toast('Link copied!');}},ic('copy',10),'Copy Link'),
                   el('button',{class:'btn br',style:{padding:'4px 8px',fontSize:'10px'},onClick:()=>revokeAdmin(a.key)},ic('x',10))
                 )
               )
@@ -657,6 +789,9 @@ function renderShareS(){
   );
 }
 
+// ══════════════════════════════════════════
+// SUPER ADMIN — ANALYTICS
+// ══════════════════════════════════════════
 function renderAnalyticsS(){
   const topQ=getTopQ();
   const cities={};S.hotels.forEach(h=>{if(h.city)cities[h.city]=(cities[h.city]||0)+1;});
@@ -664,45 +799,48 @@ function renderAnalyticsS(){
   return el('div',{class:'content fi'},
     el('div',{class:'g2',style:{gap:'14px',marginBottom:'14px'}},
       el('div',{class:'card',style:{padding:'14px'}},
-        el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'What Customers Search'),
-        topQ.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'20px'}},'No search data yet'):
+        el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'Customer Search Trends'),
+        topQ.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-f)',textAlign:'center',padding:'20px'}},'No search logs yet.\nIntegrate search logging in main website.'):
         el('div',{},topQ.slice(0,10).map((s,i)=>el('div',{style:{display:'flex',gap:'8px',padding:'6px 0',borderBottom:i<topQ.length-1?'1px solid var(--line)':'none'}},
-          el('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-faint)',width:'14px'}},(i+1)+'.'),
+          el('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',width:'14px'}},(i+1)+'.'),
           el('span',{style:{flex:1,fontSize:'12px',fontWeight:'600'}},s.q),
-          el('span',{class:'b bb2'},s.c+'x')
+          el('span',{class:'b b-b'},s.c+'x')
         )))
       ),
       el('div',{class:'card',style:{padding:'14px'}},
         el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'Hotels by City'),
-        topCities.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'20px'}},'No data'):
+        topCities.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-f)',textAlign:'center',padding:'20px'}},'No data'):
         el('div',{},topCities.map(([c,n],i)=>el('div',{style:{display:'flex',gap:'8px',padding:'6px 0',borderBottom:i<topCities.length-1?'1px solid var(--line)':'none'}},
           el('span',{style:{flex:1,fontSize:'12px',fontWeight:'600'}},c),
-          el('span',{class:'b bb2'},n+' hotels')
+          el('span',{class:'b b-b'},n+' hotels')
         )))
       )
     )
   );
 }
 
+// ══════════════════════════════════════════
+// SUPER ADMIN — BOOKINGS
+// ══════════════════════════════════════════
 function renderBookingsS(){
   return el('div',{class:'content fi'},
     el('div',{class:'g3',style:{marginBottom:'14px'}},
-      el('div',{class:'card scard'},el('div',{style:{color:'var(--accent)'}},ic('book',20)),el('div',{class:'sval',style:{color:'var(--accent)'}},S.bookings.length),el('div',{class:'slbl'},'Total')),
-      el('div',{class:'card scard'},el('div',{style:{color:'var(--good)'}},ic('check',20)),el('div',{class:'sval',style:{color:'var(--good)'}},S.bookings.filter(b=>b.status==='confirmed').length),el('div',{class:'slbl'},'Confirmed')),
-      el('div',{class:'card scard'},el('div',{style:{color:'#F59E0B'}},ic('warn',20)),el('div',{class:'sval',style:{color:'#F59E0B'}},S.bookings.filter(b=>!b.status||b.status==='pending').length),el('div',{class:'slbl'},'Pending'))
+      mkStat(S.bookings.length,'Total','var(--ac)','book'),
+      mkStat(S.bookings.filter(b=>b.status==='confirmed').length,'Confirmed','var(--good)','check'),
+      mkStat(S.bookings.filter(b=>!b.status||b.status==='pending').length,'Pending','#F59E0B','bell')
     ),
     el('div',{class:'card',style:{overflow:'hidden'}},
       el('table',{class:'tbl'},
-        el('thead',{},el('tr',{},['Guest','Hotel','Phone','Check-in','Rooms','Status','Date'].map(h=>el('th',{},h)))),
-        el('tbody',{},S.bookings.length===0?[el('tr',{},el('td',{colspan:'7',style:{textAlign:'center',color:'var(--ink-faint)',padding:'36px'}},'No bookings'))]:
+        el('thead',{},el('tr',{},['Guest','Hotel','Phone','Check-in','Rooms','Status'].map(h=>el('th',{},h)))),
+        el('tbody',{},
+          S.bookings.length===0?[el('tr',{},el('td',{colspan:'6',style:{textAlign:'center',color:'var(--ink-f)',padding:'36px'}},'No bookings yet'))]:
           S.bookings.slice().reverse().map(b=>el('tr',{},
             el('td',{style:{fontWeight:'600',fontSize:'12px'}},b.name||'—'),
             el('td',{style:{fontSize:'12px'}},b.hotelName||b.hotelId||'—'),
             el('td',{style:{fontSize:'12px'}},b.phone||'—'),
             el('td',{style:{fontSize:'12px'}},fmt(b.checkIn)),
             el('td',{style:{fontSize:'12px'}},b.rooms||'1'),
-            el('td',{},el('span',{class:'b '+(b.status==='confirmed'?'bg2':b.status==='cancelled'?'br2':'ba2')},b.status||'pending')),
-            el('td',{style:{fontSize:'11px',color:'var(--ink-soft)'}},fmtT(b.createdAt))
+            el('td',{},el('span',{class:'b '+(b.status==='confirmed'?'b-g':b.status==='cancelled'?'b-r':'b-a')},b.status||'pending'))
           ))
         )
       )
@@ -710,23 +848,99 @@ function renderBookingsS(){
   );
 }
 
+// ══════════════════════════════════════════
+// SUPER ADMIN — WEBSITE SETTINGS
+// ══════════════════════════════════════════
+function renderWebsiteS(){
+  const cfg=S.siteSettings;
+  const row=(label,child)=>el('div',{style:{marginBottom:'14px'}},lbl(label),child);
+  return el('div',{class:'content fi'},
+    el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'16px'}},
+      el('h2',{style:{fontSize:'17px',color:'var(--ink)'}},'Website Settings'),
+      el('button',{class:'btn ba',disabled:S.settingsSaving,onClick:saveSiteSettings},S.settingsSaving?sp():ic('save',13),S.settingsSaving?'Saving...':'Save All Changes')
+    ),
+
+    // Hero Section
+    el('div',{class:'sec-card'},
+      el('h3',{style:{fontSize:'14px',color:'var(--ink)',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}},ic('paint',15),' Hero Section'),
+      row('Hero Title (Main Heading)',el('input',{class:'inp',value:cfg.heroTitle,onInput:e=>ss({heroTitle:e.target.value})})),
+      row('Hero Subtitle',el('textarea',{class:'inp',rows:'2',onInput:e=>ss({heroSubtitle:e.target.value})},cfg.heroSubtitle)),
+      row('Hero Background Gradient (CSS)',el('input',{class:'inp',value:cfg.heroGradient,onInput:e=>ss({heroGradient:e.target.value})})),
+      el('div',{style:{height:'80px',borderRadius:'var(--r)',display:'flex',alignItems:'center',justifyContent:'center',background:cfg.heroGradient,color:'#fff',fontSize:'14px',fontWeight:'700',marginBottom:'14px'}},'Preview: '+cfg.heroTitle)
+    ),
+
+    // Branding
+    el('div',{class:'sec-card'},
+      el('h3',{style:{fontSize:'14px',color:'var(--ink)',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}},ic('paint',15),' Branding & Colors'),
+      row('Site Name',el('input',{class:'inp',value:cfg.siteName,onInput:e=>ss({siteName:e.target.value})})),
+      el('div',{class:'g2',style:{marginBottom:'14px'}},
+        el('div',{},lbl('Accent Color'),
+          el('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},
+            el('input',{type:'color',value:cfg.accentColor,style:{width:'44px',height:'36px',borderRadius:'8px',border:'1px solid var(--line)',cursor:'pointer'},onInput:e=>ss({accentColor:e.target.value})}),
+            el('input',{class:'inp',value:cfg.accentColor,style:{flex:1},onInput:e=>ss({accentColor:e.target.value})})
+          )
+        ),
+        el('div',{},lbl('Footer Text'),el('input',{class:'inp',value:cfg.footerText,onInput:e=>ss({footerText:e.target.value})}))
+      )
+    ),
+
+    // Contact & Social
+    el('div',{class:'sec-card'},
+      el('h3',{style:{fontSize:'14px',color:'var(--ink)',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}},ic('bell',15),' Contact & Social'),
+      el('div',{class:'g2'},
+        el('div',{},row('WhatsApp Number',el('input',{class:'inp',placeholder:'+91 98765 43210',value:cfg.whatsapp,onInput:e=>ss({whatsapp:e.target.value})}))),
+        el('div',{},row('Contact Email',el('input',{class:'inp',placeholder:'hello@hotelradar.in',value:cfg.email,onInput:e=>ss({email:e.target.value})}))),
+        el('div',{},row('Phone Number',el('input',{class:'inp',placeholder:'+91 98765 43210',value:cfg.phone,onInput:e=>ss({phone:e.target.value})}))),
+      )
+    ),
+
+    // Announcement Banner
+    el('div',{class:'sec-card'},
+      el('h3',{style:{fontSize:'14px',color:'var(--ink)',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}},ic('bell',15),' Announcement Banner'),
+      el('div',{style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px'}},
+        el('div',{class:'tog'+(cfg.showBanner?' on':''),onClick:()=>ss({showBanner:!cfg.showBanner})}),
+        el('span',{style:{fontSize:'13px',fontWeight:'600',color:'var(--ink)'}},'Show Banner on Website')
+      ),
+      cfg.showBanner?row('Banner Text',el('input',{class:'inp',value:cfg.bannerText,placeholder:'🎉 Announcement text...',onInput:e=>ss({bannerText:e.target.value})})):null
+    ),
+
+    // Maintenance Mode
+    el('div',{class:'sec-card',style:{border:'1px solid #FECACA'}},
+      el('h3',{style:{fontSize:'14px',color:'#DC2626',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}},ic('warn',15),' Maintenance Mode'),
+      el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
+        el('div',{},
+          el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Put Website in Maintenance'),
+          el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginTop:'2px'}},'Website visitors will see maintenance page')
+        ),
+        el('div',{class:'tog'+(cfg.maintenanceMode?' on':''),style:{background:cfg.maintenanceMode?'#EF4444':'var(--line)'},onClick:()=>ss({maintenanceMode:!cfg.maintenanceMode})})
+      )
+    ),
+
+    // Save button at bottom
+    el('button',{class:'btn ba btn-w',style:{marginTop:'8px'},disabled:S.settingsSaving,onClick:saveSiteSettings},S.settingsSaving?sp():ic('save',13),S.settingsSaving?'Saving...':'Save All Changes')
+  );
+}
+
+// ══════════════════════════════════════════
+// SUPER ADMIN — ACTIVITY
+// ══════════════════════════════════════════
 function renderActivityS(){
   const logs=[
     ...S.payments.map(p=>({t:p.date,msg:'Payment ₹'+p.amount+' from '+p.adminEmail,c:'var(--good)'})),
     ...S.sharedAdmins.map(a=>({t:a.addedAt,msg:'Access shared to '+a.email,c:'var(--blue)'})),
-    ...S.hotels.map(h=>({t:h.createdAt,msg:'Hotel added: '+h.name+' ('+h.city+')',c:'var(--accent)'})),
-    ...S.bookings.map(b=>({t:b.createdAt,msg:'Booking: '+(b.name||'Guest')+' → '+(b.hotelName||b.hotelId||'hotel'),c:'var(--purple)'})),
+    ...S.hotels.map(h=>({t:h.createdAt,msg:'Hotel added: '+h.name+' ('+h.city+')',c:'var(--ac)'})),
+    ...S.bookings.map(b=>({t:b.createdAt,msg:'Booking: '+(b.name||'Guest')+' → '+(b.hotelName||b.hotelId||'hotel'),c:'var(--pur)'})),
   ].sort((a,b)=>new Date(b.t||0)-new Date(a.t||0));
   return el('div',{class:'content fi'},
     el('div',{class:'card',style:{padding:'16px'}},
       el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'12px'}},'Activity Log ('+logs.length+' events)'),
-      logs.length===0?el('p',{style:{textAlign:'center',color:'var(--ink-faint)',padding:'32px',fontSize:'12px'}},'No activity yet'):
+      logs.length===0?el('p',{style:{textAlign:'center',color:'var(--ink-f)',padding:'32px',fontSize:'12px'}},'No activity yet'):
       el('div',{},logs.slice(0,60).map((l,i)=>
         el('div',{style:{display:'flex',gap:'10px',padding:'8px 0',borderBottom:i<logs.length-1?'1px solid var(--line)':'none'}},
           el('div',{style:{width:'7px',height:'7px',borderRadius:'50%',background:l.c,marginTop:'5px',flexShrink:0}}),
           el('div',{style:{flex:1}},
             el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},l.msg),
-            el('p',{style:{fontSize:'10px',color:'var(--ink-faint)',marginTop:'1px'}},fmtT(l.t))
+            el('p',{style:{fontSize:'10px',color:'var(--ink-f)',marginTop:'1px'}},fmtT(l.t))
           )
         )
       ))
@@ -734,46 +948,44 @@ function renderActivityS(){
   );
 }
 
-// ═══════════════════════ SMALL ADMIN TABS ═══════════════════════
+// ══════════════════════════════════════════
+// HOTEL ADMIN TABS
+// ══════════════════════════════════════════
 function getMyPlan(){
-  const a=S.myAdminData;if(!a)return{st:'none',label:'No Plan',days:0};
+  const a=S.myAdmin;if(!a)return{st:'none',label:'No Plan',days:0};
   if(!a.planExpiry)return{st:'free',label:'Free Trial',days:30};
   const days=Math.ceil((new Date(a.planExpiry)-new Date())/(864e5));
   if(days<=0)return{st:'expired',label:'Expired',days:0};
   return{st:a.plan==='paid'?'paid':'free',label:a.plan==='paid'?'Paid Plan':'Free Trial',days};
 }
 
-function renderDashboardH(){
+function renderDashH(){
   const h=S.myHotel,bk=S.myBookings,rv=S.myReviews;
   const plan=getMyPlan();
   const avgR=rv.length?(rv.reduce((s,r)=>s+Number(r.rating||0),0)/rv.length).toFixed(1):'—';
-  const confirmed=bk.filter(b=>b.status==='confirmed').length;
   return el('div',{class:'content fi'},
-    // Plan banner
     el('div',{class:'pl-ban '+(plan.st==='expired'?'pl-exp':plan.st==='paid'?'pl-paid':'pl-free')},
       el('div',{},
         el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},(plan.st==='free'?'🎉 Free Trial Active':plan.st==='paid'?'✅ Paid Plan Active':'⚠️ Plan Expired')),
-        el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginTop:'2px'}},(plan.st==='expired'?'Renew to keep hotel listed.':'Valid till: '+fmt(S.myAdminData?.planExpiry)+(plan.days>0?' ('+plan.days+' days left)':'')))
+        el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginTop:'2px'}},'Valid till: '+fmt(S.myAdmin?.planExpiry)+(plan.days>0?' ('+plan.days+' days left)':''))
       ),
-      plan.st==='expired'?el('button',{style:{padding:'7px 14px',background:'#EF4444',color:'#fff',fontWeight:'700',fontSize:'12px',borderRadius:'8px',cursor:'pointer'},onClick:()=>set({showPayment:true,tab:'plan'})},'Renew Now'):null
+      plan.st==='expired'?el('button',{style:{padding:'7px 14px',background:'#EF4444',color:'#fff',fontWeight:'700',fontSize:'12px',borderRadius:'8px',cursor:'pointer'},onClick:()=>set({showPayment:true})},'Renew Now'):null
     ),
-    // Stats
-    el('div',{class:'g3',style:{marginBottom:'16px'}},
+    el('div',{class:'g3',style:{marginBottom:'14px'}},
       el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'👁'),el('div',{class:'sval',style:{color:'var(--blue)'}},h?.reviewCount||0),el('div',{class:'slbl'},'Profile Views')),
-      el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'📅'),el('div',{class:'sval',style:{color:'var(--accent)'}},bk.length),el('div',{class:'slbl'},'Bookings')),
-      el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'✅'),el('div',{class:'sval',style:{color:'var(--good)'}},confirmed),el('div',{class:'slbl'},'Confirmed')),
+      el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'📅'),el('div',{class:'sval',style:{color:'var(--ac)'}},bk.length),el('div',{class:'slbl'},'Bookings')),
+      el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'✅'),el('div',{class:'sval',style:{color:'var(--good)'}},bk.filter(b=>b.status==='confirmed').length),el('div',{class:'slbl'},'Confirmed')),
       el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'⭐'),el('div',{class:'sval',style:{color:'#F59E0B'}},avgR),el('div',{class:'slbl'},'Avg Rating'))
     ),
-    // Quick hotel info
     h?el('div',{class:'card',style:{padding:'14px',marginBottom:'12px'}},
       el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}},
         el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Hotel Overview'),
-        el('button',{style:{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'var(--accent-dim)',color:'var(--accent-ink)',fontWeight:'700',fontSize:'11px',borderRadius:'6px',cursor:'pointer'},onClick:()=>set({tab:'hotel'})},ic('edit',12),'Edit')
+        el('button',{style:{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'var(--acd)',color:'var(--aci)',fontWeight:'700',fontSize:'11px',borderRadius:'6px',cursor:'pointer'},onClick:()=>set({tab:'hotel'})},ic('edit',12),'Edit')
       ),
       el('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}},
-        ...[['📍 Location',`${h.area||''}, ${h.city}`],['📞 Phone',h.phone||'—'],['💰 Price','₹'+Number(h.price||0).toLocaleString('en-IN')+'/night'],['🏷️ Status',h.approved?'✅ Live on HotelRadar':'⏳ Pending Approval']].map(([l,v])=>
-          el('div',{style:{background:'var(--paper-dim)',borderRadius:'8px',padding:'8px'}},
-            el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ink-faint)',marginBottom:'2px'}},l),
+        ...[['📍',`${h.area||''}, ${h.city}`],['📞',h.phone||'—'],['💰','₹'+Number(h.price||0).toLocaleString('en-IN')+'/night'],['🏷️',h.approved?'✅ Live':'⏳ Pending']].map(([e,v])=>
+          el('div',{style:{background:'var(--pd)',borderRadius:'8px',padding:'8px'}},
+            el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'2px'}},e),
             el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},v)
           )
         )
@@ -781,23 +993,19 @@ function renderDashboardH(){
     ):el('div',{class:'card',style:{padding:'28px',textAlign:'center',marginBottom:'12px'}},
       el('p',{style:{fontSize:'28px',marginBottom:'8px'}},'🏨'),
       el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'Add Your Hotel Profile'),
-      el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginBottom:'14px'}},'Fill in your details to get listed on HotelRadar.'),
-      el('button',{class:'btn ba',onClick:()=>set({tab:'hotel',showAddHotel:true,hForm:eHotel(),hFormErr:''})},ic('plus',13),'Add Hotel Profile')
+      el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginBottom:'14px'}},'Fill in your details to get listed on HotelRadar.'),
+      el('button',{class:'btn ba',onClick:()=>set({tab:'hotel',showHotelForm:true,hf:eH(),hfErr:''})},ic('plus',13),'Add Hotel Profile')
     ),
-    // Recent bookings
     el('div',{class:'card',style:{overflow:'hidden'}},
       el('div',{style:{padding:'10px 14px',borderBottom:'1px solid var(--line)',display:'flex',alignItems:'center',justifyContent:'space-between'}},
         el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Recent Bookings'),
-        el('button',{style:{fontSize:'11px',fontWeight:'700',color:'var(--accent)',cursor:'pointer'},onClick:()=>set({tab:'bookings'})},'View All →')
+        el('button',{style:{fontSize:'11px',fontWeight:'700',color:'var(--ac)',cursor:'pointer'},onClick:()=>set({tab:'bookings'})},'View All →')
       ),
-      bk.length===0?el('p',{style:{padding:'20px',textAlign:'center',color:'var(--ink-faint)',fontSize:'12px'}},'No bookings yet'):
+      bk.length===0?el('p',{style:{padding:'20px',textAlign:'center',color:'var(--ink-f)',fontSize:'12px'}},'No bookings yet'):
       el('div',{},bk.slice().reverse().slice(0,3).map(b=>
         el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 14px',borderBottom:'1px solid var(--line)'}},
-          el('div',{},
-            el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},b.name||'Guest'),
-            el('p',{style:{fontSize:'10px',color:'var(--ink-soft)',marginTop:'1px'}},fmt(b.checkIn)+' · '+b.guests+' guests')
-          ),
-          el('span',{class:'b '+(b.status==='confirmed'?'bg2':b.status==='cancelled'?'br2':'ba2')},b.status||'pending')
+          el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},b.name||'Guest'),el('p',{style:{fontSize:'10px',color:'var(--ink-s)',marginTop:'1px'}},fmt(b.checkIn))),
+          el('span',{class:'b '+(b.status==='confirmed'?'b-g':b.status==='cancelled'?'b-r':'b-a')},b.status||'pending')
         )
       ))
     )
@@ -809,32 +1017,31 @@ function renderHotelH(){
   return el('div',{class:'content fi'},
     el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}},
       el('h2',{style:{fontSize:'17px',color:'var(--ink)'}},'My Hotel Profile'),
-      el('button',{class:'btn ba',onClick:()=>set({showAddHotel:true,editHotel:h,hForm:h?{...h,price:String(h.price||''),rating:String(h.rating||'4.5'),reviewCount:String(h.reviewCount||0)}:eHotel(),hFormErr:'',amenityInput:''})},ic('edit',13),h?'Edit Profile':'Add Profile')
+      el('button',{class:'btn ba',onClick:()=>set({showHotelForm:true,editHotel:h,hf:h?{...h,price:String(h.price||''),rating:String(h.rating||'4.5'),reviewCount:String(h.reviewCount||0)}:eH(),hfErr:'',amenityInput:''})},ic('edit',13),h?'Edit Profile':'Add Profile')
     ),
     !h?el('div',{class:'card',style:{padding:'40px',textAlign:'center'}},
       el('p',{style:{fontSize:'36px',marginBottom:'12px'}},'🏨'),
       el('p',{style:{fontSize:'14px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'No Hotel Profile Yet'),
-      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)',marginBottom:'14px',lineHeight:'1.6'}},'Add your hotel details. After admin approval, your hotel will appear in search results.'),
-      el('button',{class:'btn ba',onClick:()=>set({showAddHotel:true,hForm:eHotel(),hFormErr:''})},ic('plus',13),'Add Hotel Profile')
+      el('p',{style:{fontSize:'12px',color:'var(--ink-s)',marginBottom:'14px',lineHeight:'1.6'}},'Add your hotel details. After admin approval, your hotel will appear in search results.'),
+      el('button',{class:'btn ba',onClick:()=>set({showHotelForm:true,hf:eH(),hfErr:''})},ic('plus',13),'Add Hotel Profile')
     ):el('div',{style:{display:'flex',flexDirection:'column',gap:'12px'}},
-      // Card preview
       el('div',{class:'card',style:{overflow:'hidden'}},
-        el('div',{style:{height:'100px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'44px',background:h.gradient||'var(--accent)'}},h.emoji||'🏨'),
+        el('div',{style:{height:'90px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'40px',background:h.gradient||'var(--ac)'}},h.emoji||'🏨'),
         el('div',{style:{padding:'14px'}},
           el('div',{style:{display:'flex',justifyContent:'space-between',gap:'8px',marginBottom:'8px'}},
-            el('div',{},el('h3',{style:{fontSize:'15px',color:'var(--ink)'}},h.name),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginTop:'2px'}},`${h.area||''}, ${h.city}, ${h.state}`)),
-            el('div',{style:{textAlign:'right'}},el('p',{style:{fontSize:'15px',fontWeight:'700',color:'var(--ink)'}},'₹'+Number(h.price||0).toLocaleString('en-IN')),el('p',{style:{fontSize:'10px',color:'var(--ink-faint)'}},'per night'))
+            el('div',{},el('h3',{style:{fontSize:'15px',color:'var(--ink)'}},h.name),el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginTop:'2px'}},`${h.area||''}, ${h.city}, ${h.state}`)),
+            el('div',{style:{textAlign:'right'}},el('p',{style:{fontSize:'15px',fontWeight:'700',color:'var(--ink)'}},'₹'+Number(h.price||0).toLocaleString('en-IN')),el('p',{style:{fontSize:'10px',color:'var(--ink-f)'}},'per night'))
           ),
-          h.desc&&el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',lineHeight:'1.6',marginBottom:'8px'}},h.desc),
+          h.desc&&el('p',{style:{fontSize:'11px',color:'var(--ink-s)',lineHeight:'1.6',marginBottom:'8px'}},h.desc),
           el('div',{style:{display:'flex',flexWrap:'wrap',gap:'5px'}},
-            ...(h.amenities||[]).slice(0,6).map(a=>el('span',{class:'b bx'},a)),
-            h.amenities?.length>6&&el('span',{class:'b bx'},'+'+( h.amenities.length-6)+' more')
+            ...(h.amenities||[]).slice(0,6).map(a=>el('span',{class:'b b-x'},a)),
+            h.amenities?.length>6&&el('span',{class:'b b-x'},'+'+( h.amenities.length-6)+' more')
           )
         )
       ),
       el('div',{class:'card',style:{padding:'12px 14px',display:'flex',alignItems:'center',justifyContent:'space-between'}},
         el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},'Listing Status'),
-        el('span',{class:'b '+(h.approved?'bg2':'ba2')},h.approved?'✅ Live on HotelRadar':'⏳ Pending Admin Approval')
+        el('span',{class:'b '+(h.approved?'b-g':'b-a')},h.approved?'✅ Live':'⏳ Pending Approval')
       )
     )
   );
@@ -845,32 +1052,32 @@ function renderBookingsH(){
   return el('div',{class:'content fi'},
     el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}},
       el('h2',{style:{fontSize:'17px',color:'var(--ink)'}},'Booking Requests'),
-      el('span',{class:'b bb2'},bk.length+' total')
+      el('span',{class:'b b-b'},bk.length+' total')
     ),
     bk.length===0?el('div',{class:'card',style:{padding:'48px',textAlign:'center'}},
       el('p',{style:{fontSize:'32px',marginBottom:'10px'}},'📅'),
       el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'No Bookings Yet'),
-      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)'}},'Customer booking requests will appear here.')
+      el('p',{style:{fontSize:'12px',color:'var(--ink-s)'}},'Customer booking requests will appear here.')
     ):el('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}},
       ...bk.slice().reverse().map(b=>
         el('div',{class:'card',style:{padding:'14px'}},
           el('div',{style:{display:'flex',justifyContent:'space-between',gap:'8px',marginBottom:'10px'}},
-            el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},b.name||'Guest'),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginTop:'2px'}},'📞 '+b.phone)),
-            el('span',{class:'b '+(b.status==='confirmed'?'bg2':b.status==='cancelled'?'br2':'ba2')},b.status||'pending')
+            el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},b.name||'Guest'),el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginTop:'2px'}},'📞 '+b.phone)),
+            el('span',{class:'b '+(b.status==='confirmed'?'b-g':b.status==='cancelled'?'b-r':'b-a')},b.status||'pending')
           ),
           el('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px',marginBottom:'10px'}},
             ...[['📅 Check-in',fmt(b.checkIn)],['📅 Check-out',fmt(b.checkOut)],['👥 Guests',b.guests+' guests'],['🚪 Rooms',b.rooms+' room(s)']].map(([l,v])=>
-              el('div',{style:{background:'var(--paper-dim)',borderRadius:'8px',padding:'7px'}},
-                el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ink-faint)',marginBottom:'2px'}},l),
+              el('div',{style:{background:'var(--pd)',borderRadius:'8px',padding:'7px'}},
+                el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'2px'}},l),
                 el('p',{style:{fontSize:'11px',fontWeight:'600',color:'var(--ink)'}},v)
               )
             )
           ),
-          b.requests&&el('div',{style:{padding:'7px 10px',background:'var(--accent-dim)',borderRadius:'8px',marginBottom:'8px',fontSize:'11px',color:'var(--accent-ink)'}},'📝 '+b.requests),
+          b.requests&&el('div',{style:{padding:'7px 10px',background:'var(--acd)',borderRadius:'8px',marginBottom:'8px',fontSize:'11px',color:'var(--aci)'}},'📝 '+b.requests),
           (!b.status||b.status==='pending')&&el('div',{style:{display:'flex',gap:'8px'}},
             el('button',{class:'btn bg',style:{flex:1,justifyContent:'center'},onClick:()=>updBooking(b.id,'confirmed')},ic('check',12),'Confirm'),
             el('button',{class:'btn br',style:{flex:1,justifyContent:'center'},onClick:()=>updBooking(b.id,'cancelled')},ic('x',12),'Cancel'),
-            el('button',{class:'btn bo',style:{padding:'9px 12px'},onClick:()=>set({deleteId:b.id,deleteType:'booking'})},ic('trash',12))
+            el('button',{class:'btn bo',style:{padding:'9px 12px'},onClick:()=>set({delId:b.id,delType:'booking'})},ic('trash',12))
           )
         )
       )
@@ -884,25 +1091,21 @@ function renderReviewsH(){
   return el('div',{class:'content fi'},
     el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}},
       el('h2',{style:{fontSize:'17px',color:'var(--ink)'}},'Customer Reviews'),
-      el('div',{},el('span',{style:{fontSize:'18px',fontWeight:'700',color:'#F59E0B',fontFamily:'Fraunces,serif'}},avg),el('span',{style:{fontSize:'11px',color:'var(--ink-faint)'}},' / 5 · '+rv.length+' reviews'))
+      el('div',{},el('span',{style:{fontSize:'18px',fontWeight:'700',color:'#F59E0B',fontFamily:'Fraunces,serif'}},avg),el('span',{style:{fontSize:'11px',color:'var(--ink-f)'}},' / 5 · '+rv.length+' reviews'))
     ),
     rv.length===0?el('div',{class:'card',style:{padding:'48px',textAlign:'center'}},
       el('p',{style:{fontSize:'32px',marginBottom:'10px'}},'⭐'),
-      el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'No Reviews Yet'),
-      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)'}},'Customer reviews will appear here.')
+      el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'No Reviews Yet')
     ):el('div',{class:'card',style:{overflow:'hidden'}},
-      ...rv.map((r,i)=>el('div',{class:'rv',style:{background:i%2?'var(--paper-dim)':'var(--card)'}},
+      ...rv.map((r,i)=>el('div',{class:'rv',style:{background:i%2?'var(--pd)':'var(--card)'}},
         el('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'8px',marginBottom:'5px'}},
-          el('div',{},
-            el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},r.userName||'Anonymous'),
-            el('div',{class:'stars',style:{fontSize:'12px'}},starsStr(r.rating))
-          ),
+          el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},r.userName||'Anonymous'),el('div',{class:'stars',style:{fontSize:'12px'}},starsStr(r.rating))),
           el('div',{style:{display:'flex',alignItems:'center',gap:'6px'}},
-            el('span',{style:{fontSize:'10px',color:'var(--ink-faint)'}},fmt(r.date)),
-            el('button',{style:{display:'flex',alignItems:'center',padding:'3px',background:'#FEF2F2',color:'#EF4444',borderRadius:'5px',cursor:'pointer'},onClick:()=>set({deleteId:r.id,deleteType:'review'})},ic('trash',11))
+            el('span',{style:{fontSize:'10px',color:'var(--ink-f)'}},fmt(r.date)),
+            el('button',{style:{display:'flex',alignItems:'center',padding:'3px',background:'#FEF2F2',color:'#EF4444',borderRadius:'5px',cursor:'pointer'},onClick:()=>set({delId:r.id,delType:'review'})},ic('trash',11))
           )
         ),
-        r.comment&&el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',lineHeight:'1.55'}},r.comment)
+        r.comment&&el('p',{style:{fontSize:'11px',color:'var(--ink-s)',lineHeight:'1.55'}},r.comment)
       ))
     )
   );
@@ -917,34 +1120,28 @@ function renderPlanH(){
         el('div',{style:{fontSize:'30px'}},plan.st==='expired'?'⚠️':plan.st==='paid'?'💳':'🎉'),
         el('div',{},
           el('h3',{style:{fontSize:'15px',color:'var(--ink)'}},(plan.st==='free'?'Free Trial Active':plan.st==='paid'?'Paid Plan Active':'Plan Expired')),
-          el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginTop:'3px'}},plan.st==='expired'?'Renew to keep your hotel listed.':plan.st==='paid'?`Active till ${fmt(S.myAdminData?.planExpiry)}`:`Trial ends ${fmt(S.myAdminData?.planExpiry)} · ${plan.days} days left`)
+          el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginTop:'3px'}},plan.st==='expired'?'Renew to keep hotel listed.':plan.st==='paid'?`Active till ${fmt(S.myAdmin?.planExpiry)}`:`Trial ends ${fmt(S.myAdmin?.planExpiry)} · ${plan.days} days left`)
         )
       ),
       plan.st==='expired'&&el('button',{style:{width:'100%',padding:'10px',background:'#EF4444',color:'#fff',fontWeight:'700',fontSize:'13px',borderRadius:'8px',cursor:'pointer'},onClick:()=>set({showPayment:true})},'🔄 Renew Now')
     ),
-    el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'Choose Your Plan'),
+    el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'Choose Plan'),
     el('div',{style:{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'16px'}},
       el('div',{class:'card',style:{padding:'14px',border:'2px solid var(--good)',cursor:'pointer'},onClick:()=>set({showPayment:true,payOpt:'monthly'})},
         el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
-          el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Monthly Plan'),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)'}},'Unlimited bookings · Full dashboard')),
-          el('div',{style:{textAlign:'right'}},el('p',{style:{fontSize:'18px',fontWeight:'700',color:'var(--good)',fontFamily:'Fraunces,serif'}},'₹999'),el('p',{style:{fontSize:'10px',color:'var(--ink-faint)'}},'per month'))
+          el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Monthly Plan'),el('p',{style:{fontSize:'11px',color:'var(--ink-s)'}},'Unlimited bookings · Full dashboard')),
+          el('div',{style:{textAlign:'right'}},el('p',{style:{fontSize:'18px',fontWeight:'700',color:'var(--good)',fontFamily:'Fraunces,serif'}},'₹999'),el('p',{style:{fontSize:'10px',color:'var(--ink-f)'}},'per month'))
         )
       ),
       el('div',{class:'card',style:{padding:'14px',border:'2px solid var(--blue)',cursor:'pointer'},onClick:()=>set({showPayment:true,payOpt:'perbooking'})},
         el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
-          el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Pay Per Booking'),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)'}},'Pay only when you get bookings')),
-          el('div',{style:{textAlign:'right'}},el('p',{style:{fontSize:'18px',fontWeight:'700',color:'var(--blue)',fontFamily:'Fraunces,serif'}},'₹49'),el('p',{style:{fontSize:'10px',color:'var(--ink-faint)'}},'per booking'))
-        )
-      ),
-      el('div',{class:'card',style:{padding:'14px',border:'1px solid var(--line)'}},
-        el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
-          el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Free Trial'),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)'}},'First 30 days free')),
-          el('span',{class:'b bg2'},'Active on Signup')
+          el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Pay Per Booking'),el('p',{style:{fontSize:'11px',color:'var(--ink-s)'}},'Pay only when you earn')),
+          el('div',{style:{textAlign:'right'}},el('p',{style:{fontSize:'18px',fontWeight:'700',color:'var(--blue)',fontFamily:'Fraunces,serif'}},'₹49'),el('p',{style:{fontSize:'10px',color:'var(--ink-f)'}},'per booking'))
         )
       )
     ),
-    el('div',{style:{padding:'12px 14px',background:'var(--accent-dim)',borderRadius:'10px',border:'1px solid rgba(232,99,28,.15)'}},
-      el('p',{style:{fontSize:'11px',color:'var(--accent-ink)',lineHeight:'1.7',fontWeight:'600'}},'💬 To upgrade or make payment, contact HotelRadar admin. We will activate your plan immediately.')
+    el('div',{style:{padding:'12px 14px',background:'var(--acd)',borderRadius:'10px',border:'1px solid rgba(232,99,28,.15)'}},
+      el('p',{style:{fontSize:'11px',color:'var(--aci)',lineHeight:'1.7',fontWeight:'600'}},'💬 Contact HotelRadar admin to activate. We will confirm and activate within minutes.')
     )
   );
 }
@@ -954,88 +1151,90 @@ function renderSettingsH(){
   return el('div',{class:'content fi'},
     el('h2',{style:{fontSize:'17px',color:'var(--ink)',marginBottom:'14px'}},'Account Settings'),
     el('div',{class:'card',style:{padding:'16px',marginBottom:'12px'}},
-      sec('Your Account'),
-      el('div',{style:{display:'flex',alignItems:'center',gap:'12px',padding:'8px 0',borderBottom:'1px solid var(--line)',marginBottom:'10px'}},
-        u.photoURL?el('img',{src:u.photoURL,style:{width:'42px',height:'42px',borderRadius:'50%',objectFit:'cover'}}):
-          el('div',{style:{width:'42px',height:'42px',borderRadius:'50%',background:'var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'700',fontSize:'18px'}},(u.email||'U')[0].toUpperCase()),
-        el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},u.displayName||'Hotel Owner'),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)'}},u.email))
+      el('div',{style:{display:'flex',alignItems:'center',gap:'12px',marginBottom:'12px',paddingBottom:'12px',borderBottom:'1px solid var(--line)'}},
+        u.photoURL?el('img',{src:u.photoURL,style:{width:'44px',height:'44px',borderRadius:'50%',objectFit:'cover'}}):
+          el('div',{style:{width:'44px',height:'44px',borderRadius:'50%',background:'var(--ac)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'700',fontSize:'18px'}},(u.email||'U')[0].toUpperCase()),
+        el('div',{},el('p',{style:{fontSize:'14px',fontWeight:'700',color:'var(--ink)'}},u.displayName||'Hotel Owner'),el('p',{style:{fontSize:'12px',color:'var(--ink-s)'}},u.email))
       ),
-      ...[['Plan',S.myAdminData?.plan==='paid'?'Paid ₹999/mo':'Free Trial'],['Expiry',fmt(S.myAdminData?.planExpiry)],['Access Level','Hotel Admin']].map(([l,v])=>
-        el('div',{style:{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--line)'}},
-          el('span',{style:{fontSize:'12px',color:'var(--ink-faint)',fontWeight:'600'}},l),
+      ...[['Plan',S.myAdmin?.plan==='paid'?'Paid ₹999/mo':'Free Trial'],['Expiry',fmt(S.myAdmin?.planExpiry)],['Access','Hotel Admin Panel']].map(([l,v])=>
+        el('div',{style:{display:'flex',justifyContent:'space-between',padding:'7px 0',borderBottom:'1px solid var(--line)'}},
+          el('span',{style:{fontSize:'12px',color:'var(--ink-f)',fontWeight:'600'}},l),
           el('span',{style:{fontSize:'12px',color:'var(--ink)',fontWeight:'700'}},v)
         )
       )
     ),
     el('div',{class:'card',style:{padding:'16px',border:'1px solid #FECACA'}},
-      sec('Danger Zone'),
       el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
-        el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},'Sign Out'),el('p',{style:{fontSize:'10px',color:'var(--ink-soft)'}},'You will need to sign in again')),
+        el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},'Sign Out'),el('p',{style:{fontSize:'10px',color:'var(--ink-s)'}},'You will need to sign in again')),
         el('button',{class:'btn br',style:{fontSize:'12px'},onClick:doSignOut},ic('logout',13),'Sign Out')
       )
     )
   );
 }
 
-// ═══════════════════════ HOTEL FORM ═══════════════════════
+// ══════════════════════════════════════════
+// HOTEL FORM MODAL
+// ══════════════════════════════════════════
 function renderHotelForm(){
-  const f=S.hForm;
-  return el('div',{class:'ov',onClick:e=>e.target.classList.contains('ov')&&set({showAddHotel:false,editHotel:null})},
-    el('div',{style:{width:'100%',maxWidth:'580px',background:'var(--card)',borderRadius:'20px',border:'1px solid var(--line)',boxShadow:'var(--sh3)',marginBottom:'24px'},class:'fi'},
+  const f=S.hf;
+  return el('div',{class:'ov',onClick:e=>e.target.classList.contains('ov')&&set({showHotelForm:false,editHotel:null})},
+    el('div',{style:{width:'100%',maxWidth:'580px',background:'var(--card)',borderRadius:'20px',border:'1px solid var(--line)',boxShadow:'var(--s3)',marginBottom:'24px'},class:'fi'},
       el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',borderBottom:'1px solid var(--line)'}},
         el('h2',{style:{fontSize:'15px',color:'var(--ink)'}},S.editHotel?'Edit Hotel':'Add Hotel'),
-        el('button',{style:{width:'28px',height:'28px',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'50%',background:'var(--paper-dim)',color:'var(--ink-soft)'},onClick:()=>set({showAddHotel:false,editHotel:null})},ic('x',13))
+        el('button',{style:{width:'28px',height:'28px',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'50%',background:'var(--pd)',color:'var(--ink-s)'},onClick:()=>set({showHotelForm:false,editHotel:null})},ic('x',13))
       ),
-      el('div',{style:{padding:'16px',maxHeight:'68vh',overflowY:'auto',display:'flex',flexDirection:'column',gap:'14px'},class:'ns'},
-        S.hFormErr?el('div',{style:{display:'flex',alignItems:'center',gap:'7px',padding:'9px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',fontSize:'12px',color:'#DC2626'}},ic('warn',12),S.hFormErr):null,
-        el('div',{},lbl('Hotel Name *'),el('input',{class:'inp',value:f.name||'',placeholder:'e.g. Ganga Palace Hotel',onInput:e=>sf({name:e.target.value})})),
-        el('div',{class:'g2'},el('div',{},lbl('City *'),el('input',{class:'inp',value:f.city||'',placeholder:'Haridwar',onInput:e=>sf({city:e.target.value})})),el('div',{},lbl('State *'),el('input',{class:'inp',value:f.state||'',placeholder:'Uttarakhand',onInput:e=>sf({state:e.target.value})}))),
-        el('div',{class:'g2'},el('div',{},lbl('Area'),el('input',{class:'inp',value:f.area||'',placeholder:'Har Ki Pauri Road',onInput:e=>sf({area:e.target.value})})),el('div',{},lbl('Phone *'),el('input',{class:'inp',value:f.phone||'',placeholder:'+91 98765 43210',onInput:e=>sf({phone:e.target.value})}))),
-        el('div',{class:'g2'},el('div',{},lbl('Price / Night (₹) *'),el('input',{class:'inp',type:'number',value:f.price||'',placeholder:'2800',onInput:e=>sf({price:e.target.value})})),el('div',{},lbl('Hotel Type'),el('select',{class:'inp',onChange:e=>sf({type:e.target.value})},...['hotel','resort','ashram','guesthouse','dharamshala','family'].map(t=>el('option',{value:t,...(f.type===t?{selected:true}:{})},t.charAt(0).toUpperCase()+t.slice(1)))))),
-        el('div',{class:'g2'},el('div',{},lbl('Check-in'),el('input',{class:'inp',value:f.checkIn||'12:00 PM',onInput:e=>sf({checkIn:e.target.value})})),el('div',{},lbl('Check-out'),el('input',{class:'inp',value:f.checkOut||'11:00 AM',onInput:e=>sf({checkOut:e.target.value})}))),
-        el('div',{},lbl('Rating'),el('input',{class:'inp',type:'number',min:'0',max:'5',step:'0.1',value:f.rating||'4.5',onInput:e=>sf({rating:e.target.value})})),
-        el('div',{},lbl('Description'),el('textarea',{class:'inp',rows:'3',style:{resize:'none'},placeholder:'Write about your hotel...',onInput:e=>sf({desc:e.target.value})},f.desc||'')),
-        el('div',{class:'g2'},el('div',{},lbl('Emoji'),el('input',{class:'inp',value:f.emoji||'🏨',onInput:e=>sf({emoji:e.target.value})})),el('div',{},lbl('Gradient CSS'),el('input',{class:'inp',value:f.gradient||'',onInput:e=>sf({gradient:e.target.value})}))),
-        el('div',{style:{height:'40px',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px',background:f.gradient||'var(--accent)'}},f.emoji||'🏨'),
+      el('div',{style:{padding:'16px',maxHeight:'68vh',overflowY:'auto',display:'flex',flexDirection:'column',gap:'13px'},class:'ns'},
+        S.hfErr?el('div',{style:{display:'flex',alignItems:'center',gap:'7px',padding:'9px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',fontSize:'12px',color:'#DC2626'}},ic('warn',12),S.hfErr):null,
+        el('div',{},lbl('Hotel Name *'),el('input',{class:'inp',value:f.name||'',placeholder:'e.g. Ganga Palace Hotel',onInput:e=>sh({name:e.target.value})})),
+        el('div',{class:'g2'},el('div',{},lbl('City *'),el('input',{class:'inp',value:f.city||'',placeholder:'Haridwar',onInput:e=>sh({city:e.target.value})})),el('div',{},lbl('State *'),el('input',{class:'inp',value:f.state||'',placeholder:'Uttarakhand',onInput:e=>sh({state:e.target.value})}))),
+        el('div',{class:'g2'},el('div',{},lbl('Area'),el('input',{class:'inp',value:f.area||'',placeholder:'Har Ki Pauri Road',onInput:e=>sh({area:e.target.value})})),el('div',{},lbl('Phone *'),el('input',{class:'inp',value:f.phone||'',placeholder:'+91 98765 43210',onInput:e=>sh({phone:e.target.value})}))),
+        el('div',{class:'g2'},el('div',{},lbl('Price/Night (₹) *'),el('input',{class:'inp',type:'number',value:f.price||'',placeholder:'2800',onInput:e=>sh({price:e.target.value})})),el('div',{},lbl('Hotel Type'),el('select',{class:'inp',onChange:e=>sh({type:e.target.value})},...['hotel','resort','ashram','guesthouse','dharamshala','family'].map(t=>el('option',{value:t,...(f.type===t?{selected:true}:{})},t.charAt(0).toUpperCase()+t.slice(1)))))),
+        el('div',{class:'g2'},el('div',{},lbl('Check-in'),el('input',{class:'inp',value:f.checkIn||'12:00 PM',onInput:e=>sh({checkIn:e.target.value})})),el('div',{},lbl('Check-out'),el('input',{class:'inp',value:f.checkOut||'11:00 AM',onInput:e=>sh({checkOut:e.target.value})}))),
+        el('div',{class:'g2'},el('div',{},lbl('Rating'),el('input',{class:'inp',type:'number',min:'0',max:'5',step:'0.1',value:f.rating||'4.5',onInput:e=>sh({rating:e.target.value})})),el('div',{},lbl('Review Count'),el('input',{class:'inp',type:'number',value:f.reviewCount||'0',onInput:e=>sh({reviewCount:e.target.value})}))),
+        el('div',{},lbl('Listing Plan'),el('select',{class:'inp',onChange:e=>sh({plan:e.target.value})},...['basic','priority','spotlight'].map(p=>el('option',{value:p,...(f.plan===p?{selected:true}:{})},p.charAt(0).toUpperCase()+p.slice(1))))),
+        el('div',{},lbl('Description'),el('textarea',{class:'inp',rows:'2',placeholder:'Write about your hotel...',onInput:e=>sh({desc:e.target.value})},f.desc||'')),
+        el('div',{class:'g2'},el('div',{},lbl('Hotel Emoji'),el('input',{class:'inp',value:f.emoji||'🏨',onInput:e=>sh({emoji:e.target.value})})),el('div',{},lbl('Gradient CSS'),el('input',{class:'inp',value:f.gradient||'',onInput:e=>sh({gradient:e.target.value})}))),
+        el('div',{style:{height:'40px',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px',background:f.gradient||'var(--ac)'}},f.emoji||'🏨'),
         el('div',{},lbl('Amenities'),
           el('div',{style:{display:'flex',flexWrap:'wrap',gap:'5px',marginBottom:'7px'}},
-            ...AMENITIES.map(a=>{const on=(f.amenities||[]).includes(a);return el('button',{class:'chip'+(on?' on':''),onClick:()=>sf({amenities:on?f.amenities.filter(x=>x!==a):[...(f.amenities||[]),a]})},a);})
+            ...AMENITIES.map(a=>{const on=(f.amenities||[]).includes(a);return el('button',{class:'chip'+(on?' on':''),onClick:()=>sh({amenities:on?f.amenities.filter(x=>x!==a):[...(f.amenities||[]),a]})},a);})
           ),
           el('div',{style:{display:'flex',gap:'6px'}},
-            el('input',{class:'inp',style:{flex:1},placeholder:'Custom amenity...',value:S.amenityInput,onInput:e=>set({amenityInput:e.target.value}),onKeydown:e=>{if(e.key==='Enter'&&S.amenityInput.trim()){sf({amenities:[...(f.amenities||[]),S.amenityInput.trim()]});set({amenityInput:''});}}}),
-            el('button',{class:'btn ba',onClick:()=>{if(S.amenityInput.trim()){sf({amenities:[...(f.amenities||[]),S.amenityInput.trim()]});set({amenityInput:''});}}},'Add')
+            el('input',{class:'inp',style:{flex:1},placeholder:'Custom amenity...',value:S.amenityInput,onInput:e=>set({amenityInput:e.target.value}),onKeydown:e=>{if(e.key==='Enter'&&S.amenityInput.trim()){sh({amenities:[...(f.amenities||[]),S.amenityInput.trim()]});set({amenityInput:''});}}}),
+            el('button',{class:'btn ba',onClick:()=>{if(S.amenityInput.trim()){sh({amenities:[...(f.amenities||[]),S.amenityInput.trim()]});set({amenityInput:''});}}},'Add')
           )
         ),
         el('div',{},lbl('Badges'),el('div',{style:{display:'flex',gap:'6px'}},
-          ...['verified','featured','priority'].map(b=>{const on=(f.badges||[]).includes(b);return el('button',{class:'chip'+(on?' on':''),onClick:()=>sf({badges:on?f.badges.filter(x=>x!==b):[...(f.badges||[]),b]})},b.charAt(0).toUpperCase()+b.slice(1));})
+          ...['verified','featured','priority'].map(b=>{const on=(f.badges||[]).includes(b);return el('button',{class:'chip'+(on?' on':''),onClick:()=>sh({badges:on?f.badges.filter(x=>x!==b):[...(f.badges||[]),b]})},b.charAt(0).toUpperCase()+b.slice(1));})
         )),
         el('div',{style:{display:'flex',gap:'18px'}},
-          el('label',{style:{display:'flex',alignItems:'center',gap:'7px',cursor:'pointer'}},el('div',{class:'tog'+(f.approved?' on':''),onClick:()=>sf({approved:!f.approved})}),el('span',{style:{fontSize:'12px',fontWeight:'600'}},'Approved')),
-          el('label',{style:{display:'flex',alignItems:'center',gap:'7px',cursor:'pointer'}},el('div',{class:'tog'+(f.active?' on':''),onClick:()=>sf({active:!f.active})}),el('span',{style:{fontSize:'12px',fontWeight:'600'}},'Active'))
+          el('label',{style:{display:'flex',alignItems:'center',gap:'7px',cursor:'pointer'}},el('div',{class:'tog'+(f.approved?' on':''),onClick:()=>sh({approved:!f.approved})}),el('span',{style:{fontSize:'12px',fontWeight:'600'}},'Approved')),
+          el('label',{style:{display:'flex',alignItems:'center',gap:'7px',cursor:'pointer'}},el('div',{class:'tog'+(f.active?' on':''),onClick:()=>sh({active:!f.active})}),el('span',{style:{fontSize:'12px',fontWeight:'600'}},'Active'))
         )
       ),
       el('div',{style:{display:'flex',gap:'9px',padding:'12px 18px',borderTop:'1px solid var(--line)'}},
-        el('button',{class:'btn bo',style:{flex:1,justifyContent:'center'},onClick:()=>set({showAddHotel:false,editHotel:null})},'Cancel'),
-        el('button',{class:'btn ba',style:{flex:1,justifyContent:'center'},disabled:S.hFormSaving,onClick:saveHotel},S.hFormSaving?sp():ic('save',13),S.hFormSaving?'Saving...':'Save Hotel')
+        el('button',{class:'btn bo',style:{flex:1,justifyContent:'center'},onClick:()=>set({showHotelForm:false,editHotel:null})},'Cancel'),
+        el('button',{class:'btn ba',style:{flex:1,justifyContent:'center'},disabled:S.hfSaving,onClick:saveHotel},S.hfSaving?sp():ic('save',13),S.hfSaving?'Saving...':'Save Hotel')
       )
     )
   );
 }
 
-// ═══════════════════════ SHARE MODAL ═══════════════════════
+// ══════════════════════════════════════════
+// SHARE MODAL
+// ══════════════════════════════════════════
 function renderShareModal(){
   return el('div',{class:'ov',style:{alignItems:'center'},onClick:e=>e.target.classList.contains('ov')&&set({showShare:false})},
-    el('div',{style:{width:'100%',maxWidth:'400px',background:'var(--card)',borderRadius:'20px',padding:'22px',boxShadow:'var(--sh3)',border:'1px solid var(--line)'},class:'fi'},
+    el('div',{style:{width:'100%',maxWidth:'400px',background:'var(--card)',borderRadius:'20px',padding:'22px',boxShadow:'var(--s3)',border:'1px solid var(--line)'},class:'fi'},
       el('h3',{style:{fontSize:'16px',color:'var(--ink)',marginBottom:'5px'}},'Share Hotel Admin Access'),
-      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)',marginBottom:'14px',lineHeight:'1.6'}},'Enter hotel owner Gmail. A unique panel link will be generated automatically.'),
+      el('p',{style:{fontSize:'12px',color:'var(--ink-s)',marginBottom:'14px',lineHeight:'1.6'}},'Enter hotel owner Gmail → A unique link is generated → Share link → They login and see their panel.'),
       S.shareErr?el('div',{style:{display:'flex',alignItems:'center',gap:'6px',padding:'8px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',marginBottom:'10px',fontSize:'12px',color:'#DC2626'}},ic('warn',12),S.shareErr):null,
       lbl('Hotel Owner Gmail *'),
       el('input',{class:'inp',type:'email',placeholder:'owner@gmail.com',value:S.shareEmail,style:{marginBottom:'12px'},onInput:e=>set({shareEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&shareAdmin()}),
-      S.generatedLink?el('div',{style:{marginBottom:'12px'}},
+      S.genLink?el('div',{style:{marginBottom:'12px'}},
         el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--good)',marginBottom:'5px'}},'✅ Link generated! Share with hotel owner:'),
-        el('div',{class:'link-box'},
-          el('span',{style:{flex:1}},S.generatedLink),
-          el('button',{style:{flexShrink:0,display:'flex',alignItems:'center',gap:'3px',padding:'5px 9px',background:'var(--accent)',color:'#fff',fontWeight:'700',fontSize:'11px',borderRadius:'6px'},onClick:()=>{navigator.clipboard.writeText(S.generatedLink);toast('Copied!');}},ic('copy',11),'Copy')
+        el('div',{class:'lbx'},el('span',{style:{flex:1,wordBreak:'break-all'}},S.genLink),
+          el('button',{style:{flexShrink:0,display:'flex',alignItems:'center',gap:'3px',padding:'5px 9px',background:'var(--ac)',color:'#fff',fontWeight:'700',fontSize:'11px',borderRadius:'6px'},onClick:()=>{navigator.clipboard.writeText(S.genLink);toast('Copied!');}},ic('copy',11),'Copy')
         )
       ):null,
       el('div',{style:{display:'flex',gap:'8px'}},
@@ -1046,100 +1245,114 @@ function renderShareModal(){
   );
 }
 
-// ═══════════════════════ PAYMENT MODAL ═══════════════════════
+// ══════════════════════════════════════════
+// PAYMENT MODAL
+// ══════════════════════════════════════════
 function renderPaymentModal(){
   return el('div',{class:'ov',style:{alignItems:'center'},onClick:e=>e.target.classList.contains('ov')&&set({showPayment:false})},
-    el('div',{style:{width:'100%',maxWidth:'360px',background:'var(--card)',borderRadius:'20px',padding:'22px',boxShadow:'var(--sh3)',border:'1px solid var(--line)'},class:'fi'},
+    el('div',{style:{width:'100%',maxWidth:'360px',background:'var(--card)',borderRadius:'20px',padding:'22px',boxShadow:'var(--s3)',border:'1px solid var(--line)'},class:'fi'},
       el('h3',{style:{fontSize:'16px',color:'var(--ink)',marginBottom:'5px'}},'Upgrade Plan'),
-      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)',marginBottom:'14px',lineHeight:'1.6'}},'Contact HotelRadar to activate your plan. We will confirm and activate within minutes.'),
+      el('p',{style:{fontSize:'12px',color:'var(--ink-s)',marginBottom:'14px',lineHeight:'1.6'}},'Contact HotelRadar to activate. We will confirm within minutes.'),
       el('div',{style:{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'14px'}},
-        ...[{v:'monthly',p:'₹999/mo',l:'Monthly Plan',d:'Unlimited bookings',c:'var(--good)'},
-            {v:'perbooking',p:'₹49/booking',l:'Per Booking',d:'Pay only when you earn',c:'var(--blue)'}].map(o=>
-          el('div',{style:{padding:'12px',background:o.v==='monthly'?'var(--good-dim)':'var(--blue-dim)',border:'2px solid '+(S.payOpt===o.v?(o.v==='monthly'?'var(--good)':'var(--blue)'):'var(--line)'),borderRadius:'10px',cursor:'pointer'},onClick:()=>set({payOpt:o.v})},
+        ...[{v:'monthly',p:'₹999/mo',l:'Monthly Plan',d:'Unlimited bookings',c:'var(--good)',bg:'var(--gd)'},
+            {v:'perbooking',p:'₹49/booking',l:'Per Booking',d:'Pay only when you earn',c:'var(--blue)',bg:'var(--bd)'}].map(o=>
+          el('div',{style:{padding:'12px',background:o.bg,border:'2px solid '+(S.payOpt===o.v?o.c:'var(--line)'),borderRadius:'10px',cursor:'pointer'},onClick:()=>set({payOpt:o.v})},
             el('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
-              el('div',{},el('p',{style:{fontWeight:'700',fontSize:'13px',color:'var(--ink)'}},o.l),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)'}},o.d)),
+              el('div',{},el('p',{style:{fontWeight:'700',fontSize:'13px',color:'var(--ink)'}},o.l),el('p',{style:{fontSize:'11px',color:'var(--ink-s)'}},o.d)),
               el('p',{style:{fontSize:'17px',fontWeight:'700',color:o.c,fontFamily:'Fraunces,serif'}},o.p)
             )
           )
         )
       ),
-      el('a',{href:'https://wa.me/919876543210?text=Hi+HotelRadar%2C+I+want+to+activate+'+encodeURIComponent(S.payOpt==='monthly'?'Monthly Plan ₹999':'Per Booking Plan ₹49')+'+plan.',target:'_blank',style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',width:'100%',padding:'11px',background:'#25D366',color:'#fff',fontWeight:'700',fontSize:'13px',borderRadius:'8px',textDecoration:'none',marginBottom:'7px'}},'💬 Contact on WhatsApp'),
-      el('button',{class:'btn bo',style:{width:'100%',justifyContent:'center'},onClick:()=>set({showPayment:false})},'Close')
+      el('a',{href:'https://wa.me/919876543210?text=Hi+HotelRadar%2C+I+want+to+activate+'+encodeURIComponent(S.payOpt==='monthly'?'Monthly Plan ₹999':'Per Booking ₹49'),target:'_blank',style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',width:'100%',padding:'11px',background:'#25D366',color:'#fff',fontWeight:'700',fontSize:'13px',borderRadius:'8px',textDecoration:'none',marginBottom:'7px'}},'💬 Contact on WhatsApp'),
+      el('button',{class:'btn bo btn-w',onClick:()=>set({showPayment:false})},'Close')
     )
   );
 }
 
-// ═══════════════════════ CONFIRM DELETE ═══════════════════════
+// ══════════════════════════════════════════
+// CONFIRM DELETE
+// ══════════════════════════════════════════
 function renderConfirm(){
   const titles={hotel:'Delete Hotel?',review:'Remove Review?',booking:'Remove Booking?'};
-  return el('div',{class:'ov',style:{alignItems:'center'},onClick:e=>e.target.classList.contains('ov')&&set({deleteId:null,deleteType:''})},
-    el('div',{style:{width:'100%',maxWidth:'310px',background:'var(--card)',borderRadius:'18px',padding:'22px',textAlign:'center',boxShadow:'var(--sh3)',border:'1px solid var(--line)'},class:'fi'},
+  return el('div',{class:'ov',style:{alignItems:'center'},onClick:e=>e.target.classList.contains('ov')&&set({delId:null,delType:''})},
+    el('div',{style:{width:'100%',maxWidth:'310px',background:'var(--card)',borderRadius:'18px',padding:'22px',textAlign:'center',boxShadow:'var(--s3),border:1px solid var(--line)'},class:'fi'},
       el('div',{style:{width:'44px',height:'44px',borderRadius:'50%',background:'#FEF2F2',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',color:'#EF4444'}},ic('trash',20)),
-      el('h3',{style:{fontSize:'15px',color:'var(--ink)',marginBottom:'5px'}},titles[S.deleteType]||'Delete?'),
-      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)',marginBottom:'18px'}},'This cannot be undone.'),
+      el('h3',{style:{fontSize:'15px',color:'var(--ink)',marginBottom:'5px'}},titles[S.delType]||'Delete?'),
+      el('p',{style:{fontSize:'12px',color:'var(--ink-s)',marginBottom:'18px'}},'This cannot be undone.'),
       el('div',{style:{display:'flex',gap:'8px'}},
-        el('button',{class:'btn bo',style:{flex:1,justifyContent:'center'},onClick:()=>set({deleteId:null,deleteType:''})},'Cancel'),
+        el('button',{class:'btn bo',style:{flex:1,justifyContent:'center'},onClick:()=>set({delId:null,delType:''})},'Cancel'),
         el('button',{class:'btn br',style:{flex:1,justifyContent:'center'},onClick:async()=>{
-          if(S.deleteType==='hotel')await delHotel(S.deleteId);
-          else if(S.deleteType==='review')await delReview(S.deleteId);
-          else if(S.deleteType==='booking')await delBooking(S.deleteId);
+          if(S.delType==='hotel')await delHotel(S.delId);
+          else if(S.delType==='review')await delReview(S.delId);
+          else if(S.delType==='booking')await delBooking(S.delId);
         }},ic('trash',13),'Delete')
       )
     )
   );
 }
 
-// ═══════════════════════ TOAST ═══════════════════════
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
 function renderToast(){
   if(!S.toast)return null;
   const d=document.createElement('div');
-  d.style.cssText=`position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${S.toast.t==='error'?'#EF4444':'#1F7A4D'};color:#fff;padding:9px 18px;border-radius:999px;font-size:12px;font-weight:700;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.2);white-space:nowrap`;
-  d.textContent=S.toast.msg;return d;
+  d.style.cssText=`position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:${S.toast.t==='err'?'#EF4444':'#1F7A4D'};color:#fff;padding:9px 18px;border-radius:999px;font-size:12px;font-weight:700;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.2);white-space:nowrap`;
+  d.textContent=S.toast.msg;
+  return d;
 }
 
-// ═══════════════════════ MAIN RENDER ═══════════════════════
+// ══════════════════════════════════════════
+// MAIN RENDER
+// ══════════════════════════════════════════
 function render(){
   const app=document.getElementById('app');
   app.innerHTML='';
   if(!S.authReady){const d=document.createElement('div');d.style.cssText='min-height:100vh;display:flex;align-items:center;justify-content:center;';d.appendChild(sp2());app.appendChild(d);return;}
   if(!S.isAuth){app.appendChild(renderLogin());if(S.toast)app.appendChild(renderToast());return;}
 
-  if(IS_HOTEL_MODE){
-    // SMALL HOTEL PANEL
-    app.appendChild(renderTopbar());
-    app.appendChild(el('div',{class:'tab-row'},
-      ...[{id:'dashboard',l:'📊 Dashboard'},{id:'hotel',l:'🏨 My Hotel'},{id:'bookings',l:'📅 Bookings'},{id:'reviews',l:'⭐ Reviews'},{id:'plan',l:'💳 My Plan'},{id:'settings',l:'⚙️ Settings'}]
-        .map(t=>el('div',{class:'tbtn'+(S.tab===t.id?' on':''),onClick:()=>set({tab:t.id})},t.l))
-    ));
-    if(S.tab==='dashboard')app.appendChild(renderDashboardH());
-    else if(S.tab==='hotel')app.appendChild(renderHotelH());
-    else if(S.tab==='bookings')app.appendChild(renderBookingsH());
-    else if(S.tab==='reviews')app.appendChild(renderReviewsH());
-    else if(S.tab==='plan')app.appendChild(renderPlanH());
-    else if(S.tab==='settings')app.appendChild(renderSettingsH());
+  if(IS_HOTEL){
+    // ── HOTEL OWNER PANEL ──
+    app.appendChild(renderMobTop());
+    // tab content
+    const content=
+      S.tab==='dashboard'?renderDashH():
+      S.tab==='hotel'?renderHotelH():
+      S.tab==='bookings'?renderBookingsH():
+      S.tab==='reviews'?renderReviewsH():
+      S.tab==='plan'?renderPlanH():
+      renderSettingsH();
+    app.appendChild(content);
+    app.appendChild(renderMobNav());
   } else {
-    // SUPER ADMIN PANEL
-    app.appendChild(el('div',{style:{display:'flex'}},
+    // ── SUPER ADMIN PANEL ──
+    const layout=el('div',{class:'layout'},
       renderSidebar(),
       el('div',{class:'main'},
         renderTopbar(),
-        S.tab==='dashboard'?renderDashboardS():
+        renderMobTop(),
+        S.tab==='dashboard'?renderDashS():
         S.tab==='hotels'?renderHotelsS():
         S.tab==='payments'?renderPaymentsS():
         S.tab==='admins'?renderAdminsS():
         S.tab==='share'?renderShareS():
         S.tab==='analytics'?renderAnalyticsS():
         S.tab==='bookings'?renderBookingsS():
+        S.tab==='website'?renderWebsiteS():
         S.tab==='activity'?renderActivityS():
         el('div',{class:'content'},'')
       )
-    ));
+    );
+    app.appendChild(layout);
+    app.appendChild(renderMobNav());
   }
+
   // Modals
-  if(S.showAddHotel||S.editHotel)app.appendChild(renderHotelForm());
+  if(S.showHotelForm||S.editHotel)app.appendChild(renderHotelForm());
   if(S.showShare)app.appendChild(renderShareModal());
   if(S.showPayment)app.appendChild(renderPaymentModal());
-  if(S.deleteId)app.appendChild(renderConfirm());
+  if(S.delId)app.appendChild(renderConfirm());
   if(S.toast)app.appendChild(renderToast());
 }
 
