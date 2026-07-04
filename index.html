@@ -1,0 +1,1149 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>HotelRadar Admin</title>
+<meta name="robots" content="noindex,nofollow"/>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --ink:#1C1B1A;--ink-soft:#5C5955;--ink-faint:#948F89;
+  --paper:#F8F7F4;--paper-dim:#F0EDE7;--card:#FFFFFF;--line:#E7E2D9;
+  --accent:#E8631C;--accent-dim:#FCE8DB;--accent-ink:#7A350F;
+  --good:#1F7A4D;--good-dim:#E1F3E9;
+  --blue:#2563EB;--blue-dim:#EFF6FF;
+  --purple:#7C3AED;--purple-dim:#F5F3FF;
+  --r-sm:10px;--r-md:14px;--r-lg:20px;
+  --sh1:0 1px 3px rgba(28,27,26,.07);
+  --sh2:0 4px 16px rgba(28,27,26,.09);
+  --sh3:0 12px 32px rgba(28,27,26,.14);
+  --nav:220px;
+}
+html{font-family:'Inter',sans-serif;background:var(--paper);color:var(--ink);-webkit-font-smoothing:antialiased;}
+h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:700;line-height:1.25;}
+button,input,select,textarea{font-family:inherit;font-size:14px;border:none;outline:none;}
+button{cursor:pointer;background:none;-webkit-tap-highlight-color:transparent;}
+.ns::-webkit-scrollbar{display:none;}
+.ns{-ms-overflow-style:none;scrollbar-width:none;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.spin{animation:spin .7s linear infinite;display:inline-block;}
+@keyframes fi{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+.fi{animation:fi .2s ease-out forwards;}
+/* Layout */
+.sidebar{width:var(--nav);background:var(--card);border-right:1px solid var(--line);position:fixed;top:0;left:0;height:100vh;z-index:30;display:flex;flex-direction:column;overflow-y:auto;}
+.main{margin-left:var(--nav);min-height:100vh;display:flex;flex-direction:column;}
+@media(max-width:680px){.sidebar{display:none;}.main{margin-left:0;}}
+.topbar{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:1px solid var(--line);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:var(--sh1);}
+.content{padding:20px;flex:1;max-width:960px;}
+/* Nav */
+.ni{display:flex;align-items:center;gap:9px;padding:9px 14px;font-size:12.5px;font-weight:600;color:var(--ink-soft);border-radius:8px;margin:2px 8px;cursor:pointer;transition:all .12s;}
+.ni:hover{background:var(--paper-dim);color:var(--ink);}
+.ni.on{background:var(--accent-dim);color:var(--accent);}
+.ni .bdg{margin-left:auto;background:#EF4444;color:#fff;font-size:9px;font-weight:900;padding:1px 5px;border-radius:999px;min-width:16px;text-align:center;}
+/* Cards */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r-md);box-shadow:var(--sh1);}
+.scard{padding:16px;display:flex;flex-direction:column;gap:3px;}
+.sval{font-size:26px;font-weight:700;font-family:'Fraunces',serif;}
+.slbl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);}
+/* Inputs */
+.inp{width:100%;padding:9px 12px;background:var(--paper-dim);border:1px solid var(--line);border-radius:var(--r-sm);font-size:13px;color:var(--ink);transition:border .15s;}
+.inp:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--accent-dim);}
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:9px 15px;border-radius:var(--r-sm);font-size:12.5px;font-weight:700;cursor:pointer;transition:all .12s;border:none;}
+.btn:active{transform:scale(.97);}
+.ba{background:var(--accent);color:#fff;}
+.bg{background:var(--good);color:#fff;}
+.bb{background:var(--blue);color:#fff;}
+.br{background:#EF4444;color:#fff;}
+.bo{background:var(--card);color:var(--ink-soft);border:1px solid var(--line);}
+.bo:hover{background:var(--paper-dim);}
+/* Badges */
+.b{display:inline-block;padding:2px 7px;border-radius:999px;font-size:9.5px;font-weight:800;text-transform:uppercase;}
+.bg2{background:var(--good-dim);color:var(--good);}
+.br2{background:#FEE2E2;color:#DC2626;}
+.ba2{background:#FEF3C7;color:#92400E;}
+.bb2{background:var(--blue-dim);color:var(--blue);}
+.bp2{background:var(--purple-dim);color:var(--purple);}
+.bx{background:var(--paper-dim);color:var(--ink-faint);}
+/* Toggle */
+.tog{width:40px;height:22px;background:var(--line);border-radius:999px;position:relative;cursor:pointer;transition:background .15s;flex-shrink:0;}
+.tog.on{background:var(--good);}
+.tog::after{content:'';width:16px;height:16px;background:#fff;border-radius:50%;position:absolute;top:3px;left:3px;transition:transform .15s;box-shadow:0 1px 3px rgba(0,0,0,.2);}
+.tog.on::after{transform:translateX(18px);}
+/* Chip */
+.chip{padding:4px 10px;border-radius:999px;border:1px solid var(--line);background:var(--paper-dim);color:var(--ink-soft);font-size:11px;font-weight:700;cursor:pointer;transition:all .1s;}
+.chip.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+/* Table */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{text-align:left;padding:8px 12px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink-faint);border-bottom:1px solid var(--line);background:var(--paper-dim);}
+.tbl td{padding:9px 12px;border-bottom:1px solid var(--line);}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:var(--paper-dim);}
+/* Overlay */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px 14px;}
+/* Grid */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.g3{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;}
+@media(min-width:520px){.g3{grid-template-columns:repeat(4,1fr);}}
+/* Tabs (small admin) */
+.tab-row{display:flex;overflow-x:auto;border-bottom:1px solid var(--line);background:var(--card);padding:0 10px;}
+.tab-row::-webkit-scrollbar{display:none;}
+.tbtn{padding:11px 13px;font-size:12px;font-weight:700;border-bottom:2px solid transparent;color:var(--ink-soft);white-space:nowrap;cursor:pointer;transition:all .12s;}
+.tbtn.on{border-color:var(--accent);color:var(--accent);}
+/* Plan banners */
+.pl-free{background:var(--good-dim);border:1px solid #86EFAC;}
+.pl-paid{background:var(--blue-dim);border:1px solid #BFDBFE;}
+.pl-exp{background:#FEF2F2;border:1px solid #FECACA;}
+.pl-ban{padding:12px 16px;border-radius:var(--r-md);display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;}
+/* Link box */
+.link-box{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--paper-dim);border:1px solid var(--line);border-radius:var(--r-sm);font-size:12px;font-family:monospace;word-break:break-all;color:var(--ink);}
+/* Review */
+.rv{padding:14px;border-bottom:1px solid var(--line);}
+.rv:last-child{border-bottom:none;}
+.stars{color:#F59E0B;}
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+// ═══════════════════════ CONFIG ═══════════════════════
+const FB={apiKey:"AIzaSyDoBNdJEAos6Ofj-KDzvarg_mH1Nz3nQls",authDomain:"hotel-radar-india.firebaseapp.com",databaseURL:"https://hotel-radar-india-default-rtdb.firebaseio.com",projectId:"hotel-radar-india",storageBucket:"hotel-radar-india.firebasestorage.app",messagingSenderId:"492786665359",appId:"1:492786665399:web:7033614463c044cf4fadfa"};
+const SUPER_EMAIL="hotelradar.admin@gmail.com";
+const AMENITIES=["AC","WiFi","Restaurant","Parking","Pool","Gym","Spa","Ganga View","Mountain View","Room Service","Laundry","Couple Friendly","Family Friendly","Hot Water","TV","Mini Bar","Balcony","Garden","Airport Shuttle","24/7 Reception"];
+// Detect mode from URL
+const URL_PARAMS=new URLSearchParams(location.search);
+const HOTEL_EMAIL=URL_PARAMS.get('admin'); // ?admin=email → small panel
+const IS_HOTEL_MODE=!!HOTEL_EMAIL;
+
+// ═══════════════════════ STATE ═══════════════════════
+let S={
+  // auth
+  authReady:false,isAuth:false,user:null,
+  // super admin data
+  hotels:[],sharedAdmins:[],payments:[],bookings:[],reviews:[],searchLogs:[],
+  // hotel admin data
+  myAdminData:null,myHotel:null,myBookings:[],myReviews:[],
+  // ui
+  tab:'dashboard',loading:true,
+  // forms
+  showAddHotel:false,editHotel:null,hForm:eHotel(),hFormErr:'',hFormSaving:false,amenityInput:'',
+  showShare:false,shareEmail:'',shareErr:'',shareSaving:false,generatedLink:'',
+  showPayment:false,payOpt:'monthly',
+  deleteId:null,deleteType:'',
+  // login
+  lEmail:'',lPass:'',lErr:'',lLoading:false,lShowPass:false,gLoad:false,
+  toast:null,
+};
+function eHotel(){return{name:'',city:'',state:'',area:'',pin:'',phone:'',type:'hotel',price:'',rating:'4.5',reviewCount:'0',checkIn:'12:00 PM',checkOut:'11:00 AM',plan:'basic',emoji:'🏨',gradient:'linear-gradient(135deg,#E8631C,#F2A65A)',desc:'',amenities:[],badges:[],approved:false,active:true};}
+function set(p){S={...S,...p};render();}
+function sf(p){set({hForm:{...S.hForm,...p}});}
+
+// ═══════════════════════ FIREBASE ═══════════════════════
+let db=null;
+function initFB(){
+  if(!firebase.apps.length)firebase.initializeApp(FB);
+  db=firebase.database();
+  firebase.auth().onAuthStateChanged(async u=>{
+    if(!u){set({authReady:true,isAuth:false});return;}
+    if(IS_HOTEL_MODE){
+      // Small admin panel — check if this user's email matches HOTEL_EMAIL param
+      const email=u.email;
+      const expectedEmail=decodeURIComponent(HOTEL_EMAIL);
+      if(email.toLowerCase()!==expectedEmail.toLowerCase()){
+        await firebase.auth().signOut();
+        set({authReady:true,isAuth:false,lErr:`This panel is for ${expectedEmail}. Please sign in with that Google account.`});
+        return;
+      }
+      const key=email.replace(/\./g,'_');
+      const snap=await db.ref(`sharedAdmins/${key}`).get();
+      if(!snap.exists()){
+        await firebase.auth().signOut();
+        set({authReady:true,isAuth:false,lErr:'Access not granted. Contact HotelRadar admin.'});
+        return;
+      }
+      const adminData=snap.val();
+      set({authReady:true,isAuth:true,user:u,myAdminData:{...adminData,key}});
+      loadHotelMode(email,key,adminData);
+    } else {
+      // Super admin panel
+      if(u.email!==SUPER_EMAIL){await firebase.auth().signOut();set({authReady:true,isAuth:false,lErr:'Access denied. Super Admin only.'});return;}
+      set({authReady:true,isAuth:true,user:u});
+      loadSuperMode();
+    }
+  });
+}
+
+function loadSuperMode(){
+  db.ref('hotels').on('value',s=>{const d=s.val();if(!d){set({hotels:[],loading:false});return;}const l=Array.isArray(d)?d.filter(Boolean):Object.keys(d).map(k=>({...d[k],id:d[k].id||k}));set({hotels:l,loading:false});});
+  db.ref('sharedAdmins').on('value',s=>{const d=s.val();if(!d){set({sharedAdmins:[]});return;}set({sharedAdmins:Object.keys(d).map(k=>({...d[k],key:k}))});});
+  db.ref('payments').on('value',s=>{const d=s.val();if(!d){set({payments:[]});return;}set({payments:Object.keys(d).map(k=>({...d[k],id:k}))});});
+  db.ref('bookings').on('value',s=>{const d=s.val();if(!d){set({bookings:[]});return;}set({bookings:Object.keys(d).map(k=>({...d[k],id:k}))});});
+  db.ref('searchLogs').limitToLast(300).on('value',s=>{const d=s.val();if(!d){set({searchLogs:[]});return;}set({searchLogs:Object.keys(d).map(k=>({...d[k],id:k})).reverse()});});
+}
+
+function loadHotelMode(email,key,adminData){
+  db.ref('hotels').on('value',s=>{
+    const d=s.val();if(!d){set({myHotel:null,loading:false});return;}
+    const all=Array.isArray(d)?d.filter(Boolean):Object.keys(d).map(k=>({...d[k],id:d[k].id||k}));
+    const mine=all.find(h=>h.ownerEmail===email||h.id===adminData.hotelId)||null;
+    set({myHotel:mine,loading:false,hForm:mine?{...mine,price:String(mine.price||''),rating:String(mine.rating||'4.5'),reviewCount:String(mine.reviewCount||0)}:eHotel()});
+  });
+  db.ref('bookings').on('value',s=>{
+    const d=s.val();if(!d){set({myBookings:[]});return;}
+    const all=Object.keys(d).map(k=>({...d[k],id:k}));
+    set({myBookings:all.filter(b=>b.hotelId===adminData.hotelId||b.ownerEmail===email)});
+  });
+  const hKey=adminData.hotelId||key;
+  db.ref(`reviews/${hKey}`).on('value',s=>{
+    const d=s.val();if(!d){set({myReviews:[]});return;}
+    set({myReviews:Object.keys(d).map(k=>({...d[k],id:k})).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0))});
+  });
+}
+
+// Auth actions
+async function doLogin(){
+  if(S.lLoading)return;set({lLoading:true,lErr:''});
+  try{await firebase.auth().signInWithEmailAndPassword(S.lEmail,S.lPass);}
+  catch(e){const c=e.code||'';set({lLoading:false,lErr:c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-credential'?'Invalid credentials.':e.message||'Login failed.'});}
+}
+async function doGoogle(){
+  set({gLoad:true,lErr:''});
+  try{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});await firebase.auth().signInWithPopup(p);}
+  catch(e){set({gLoad:false,lErr:'Google sign-in failed.'});}
+}
+async function doSignOut(){await firebase.auth().signOut();set({isAuth:false,user:null,tab:'dashboard'});}
+
+// Hotel ops
+async function saveHotel(){
+  if(!S.hForm.name?.trim()){set({hFormErr:'Hotel name required'});return;}
+  if(!S.hForm.city?.trim()){set({hFormErr:'City required'});return;}
+  if(!S.hForm.phone?.trim()){set({hFormErr:'Phone required'});return;}
+  if(!S.hForm.price||Number(S.hForm.price)<=0){set({hFormErr:'Valid price required'});return;}
+  set({hFormSaving:true,hFormErr:''});
+  try{
+    const existId=S.editHotel?.id||(IS_HOTEL_MODE?S.myAdminData?.hotelId:null);
+    const id=existId||('h'+Date.now());
+    const h={...S.hForm,id,price:Number(S.hForm.price)||0,rating:Number(S.hForm.rating)||4.5,reviewCount:Number(S.hForm.reviewCount)||0,createdAt:existId?(S.editHotel?.createdAt||new Date().toISOString()):new Date().toISOString()};
+    if(IS_HOTEL_MODE){h.ownerEmail=S.user.email;await db.ref(`sharedAdmins/${S.myAdminData.key}`).update({hotelId:id});}
+    await db.ref(`hotels/${id}`)[existId?'update':'set'](h);
+    toast(existId?'Hotel updated!':'Hotel added!');
+    set({showAddHotel:false,editHotel:null,hFormSaving:false});
+  }catch(e){set({hFormErr:e.message||'Save failed',hFormSaving:false});}
+}
+async function delHotel(id){await db.ref(`hotels/${id}`).remove();set({deleteId:null});toast('Deleted.');}
+async function togField(id,f,v){await db.ref(`hotels/${id}`).update({[f]:v});}
+
+// Share admin
+async function shareAdmin(){
+  const email=S.shareEmail.trim().toLowerCase();
+  if(!email.includes('@')){set({shareErr:'Enter valid Gmail.'});return;}
+  if(S.sharedAdmins.find(a=>a.email===email)){set({shareErr:'Already has access.'});return;}
+  set({shareSaving:true,shareErr:''});
+  try{
+    const key=email.replace(/\./g,'_');
+    await db.ref(`sharedAdmins/${key}`).set({email,addedAt:new Date().toISOString(),addedBy:S.user.email,active:true,plan:'free',planExpiry:new Date(Date.now()+30*864e5).toISOString()});
+    // Generate link
+    const link=`${location.origin}${location.pathname}?admin=${encodeURIComponent(email)}`;
+    set({shareSaving:false,shareEmail:'',generatedLink:link});
+    toast('Access shared! Link generated.');
+  }catch(e){set({shareSaving:false,shareErr:e.message||'Failed.'});}
+}
+async function revokeAdmin(key){await db.ref(`sharedAdmins/${key}`).remove();toast('Access revoked.');}
+async function markPaid(key){
+  const expiry=new Date(Date.now()+30*864e5).toISOString();
+  const now=new Date().toISOString();
+  await db.ref(`sharedAdmins/${key}`).update({plan:'paid',planExpiry:expiry,lastPaid:now});
+  await db.ref(`payments/pay_${Date.now()}`).set({adminEmail:key,amount:999,date:now,status:'paid',plan:'monthly'});
+  toast('Payment marked. Plan extended 30 days.');
+}
+async function delReview(id){
+  const k=S.myAdminData.hotelId||S.myAdminData.key;
+  await db.ref(`reviews/${k}/${id}`).remove();
+  set({deleteId:null,deleteType:''});toast('Review removed.');
+}
+async function updBooking(id,status){await db.ref(`bookings/${id}`).update({status});toast('Booking '+status+'!');}
+async function delBooking(id){await db.ref(`bookings/${id}`).remove();set({deleteId:null,deleteType:''});toast('Booking removed.');}
+
+// ═══════════════════════ UTILS ═══════════════════════
+function toast(msg,t='success'){set({toast:{msg,t}});setTimeout(()=>set({toast:null}),3500);}
+function el(tag,a,...c){
+  const e=document.createElement(tag);
+  if(a)Object.keys(a).forEach(k=>{
+    if(k==='class')e.className=a[k];
+    else if(k.startsWith('on'))e.addEventListener(k.slice(2).toLowerCase(),a[k]);
+    else if(k==='style'&&typeof a[k]==='object')Object.assign(e.style,a[k]);
+    else if(['checked','disabled','selected','value'].includes(k))e[k]=a[k];
+    else e.setAttribute(k,a[k]);
+  });
+  c.flat(9).forEach(ch=>{if(ch==null||ch===false)return;e.appendChild(typeof ch==='string'||typeof ch==='number'?document.createTextNode(String(ch)):ch);});
+  return e;
+}
+function svg(paths,sz=16){
+  const s=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  ['width','height'].forEach(a=>s.setAttribute(a,sz));
+  s.setAttribute('viewBox','0 0 24 24');s.setAttribute('fill','none');
+  s.setAttribute('stroke','currentColor');s.setAttribute('stroke-width','2');
+  s.setAttribute('stroke-linecap','round');s.setAttribute('stroke-linejoin','round');
+  paths.forEach(d=>{const p=document.createElementNS('http://www.w3.org/2000/svg','path');p.setAttribute('d',d);s.appendChild(p);});
+  return s;
+}
+const IC={
+  dash:['M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z'],
+  hotel:['M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z','M9 22V12h6v10'],
+  money:['M12 1v22','M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6'],
+  users:['M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2','M23 21v-2a4 4 0 00-3-3.87','M16 3.13a4 4 0 010 7.75','M9 7a4 4 0 100 8 4 4 0 000-8z'],
+  share:['M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8','M16 6l-4-4-4 4','M12 2v13'],
+  bar:['M18 20V10','M12 20V4','M6 20v-6'],
+  book:['M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z','M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z'],
+  star:['M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z'],
+  plus:['M12 5v14','M5 12h14'],
+  edit:['M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7','M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z'],
+  trash:['M3 6h18','M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6','M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2'],
+  check:['M22 11.08V12a10 10 0 11-5.93-9.14','M22 4L12 14.01l-3-3'],
+  x:['M18 6L6 18','M6 6l12 12'],
+  eye:['M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z','M12 9a3 3 0 100 6 3 3 0 000-6z'],
+  eyeoff:['M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94','M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19','M1 1l22 22'],
+  logout:['M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4','M16 17l5-5-5-5','M21 12H9'],
+  warn:['M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z','M12 9v4','M12 17h.01'],
+  copy:['M8 4H6a2 2 0 00-2 2v14a2 2 0 002 2h12a2 2 0 002-2V8l-4-4z','M14 2v4a2 2 0 002 2h4','M8 2h8'],
+  save:['M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z','M17 21v-8H7v8','M7 3v5h8'],
+  act:['M22 12h-4l-3 9L9 3l-3 9H2'],
+  shield:['M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10'],
+  plan:['M20 7H4a2 2 0 00-2 2v6a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z','M1 10h22'],
+  set2:['M12 15a3 3 0 100-6 3 3 0 000 6z','M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z'],
+};
+function ic(n,s=16){return svg(IC[n]||[],s);}
+function sp(s=14,c1='rgba(255,255,255,.3)',c2='#fff'){const x=document.createElement('span');x.className='spin';x.style.cssText=`width:${s}px;height:${s}px;border:2px solid ${c1};border-top-color:${c2};border-radius:50%;`;return x;}
+function sp2(){return sp(28,'var(--line)','var(--accent)');}
+function fmt(d){if(!d)return'—';try{return new Date(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}catch{return'—';}}
+function fmtT(d){if(!d)return'—';try{return new Date(d).toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});}catch{return'—';}}
+function lbl(t){return el('label',{style:{fontSize:'10px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'.06em',color:'var(--ink-faint)',display:'block',marginBottom:'5px'}},t);}
+function sec(t){return el('p',{style:{fontSize:'10px',fontWeight:'900',textTransform:'uppercase',letterSpacing:'.08em',color:'var(--ink-faint)',marginBottom:'8px'}},t);}
+function starsStr(n){return'★'.repeat(Math.round(n||0))+'☆'.repeat(5-Math.round(n||0));}
+
+// ═══════════════════════ LOGIN SCREEN ═══════════════════════
+function renderLogin(){
+  const isHotel=IS_HOTEL_MODE;
+  const ownerEmail=isHotel?decodeURIComponent(HOTEL_EMAIL):'';
+  return el('div',{style:{minHeight:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:isHotel?'var(--paper)':'linear-gradient(135deg,#1a1916 0%,#353330 100%)',padding:'20px'}},
+    el('div',{style:{width:'100%',maxWidth:'380px',background:'var(--card)',borderRadius:'20px',padding:'28px',boxShadow:'var(--sh3)',border:'1px solid var(--line)'},class:'fi'},
+      // Logo
+      el('div',{style:{display:'flex',alignItems:'center',gap:'12px',marginBottom:'22px',justifyContent:'center'}},
+        el('div',{style:{width:'46px',height:'46px',borderRadius:'13px',background:'linear-gradient(135deg,#E8631C,#F2A65A)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'900',fontSize:'21px',fontFamily:'Fraunces,serif'}},'H'),
+        el('div',{},
+          el('h1',{style:{fontSize:'18px',color:'var(--ink)'}},isHotel?'Hotel Admin Panel':'Super Admin'),
+          el('p',{style:{fontSize:'11px',color:'var(--ink-faint)'}},isHotel?'Powered by HotelRadar':'HotelRadar Control Panel')
+        )
+      ),
+      // Info
+      isHotel?el('div',{style:{padding:'10px 13px',background:'var(--accent-dim)',border:'1px solid rgba(232,99,28,.2)',borderRadius:'var(--r-sm)',marginBottom:'16px'}},
+        el('p',{style:{fontSize:'11.5px',color:'var(--accent-ink)',lineHeight:'1.6',fontWeight:'600'}},`👋 This panel is for: ${ownerEmail}`+'\nSign in with that Google account only.')
+      ):null,
+      // Error
+      S.lErr?el('div',{style:{display:'flex',alignItems:'center',gap:'7px',padding:'9px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',marginBottom:'13px',fontSize:'12px',color:'#DC2626'}},ic('warn',13),S.lErr):null,
+      // Google
+      el('button',{
+        onClick:doGoogle,disabled:S.gLoad,
+        style:{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:'10px',padding:'11px',background:'var(--card)',border:'1px solid var(--line)',borderRadius:'var(--r-sm)',fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'13px',cursor:'pointer',transition:'background .12s'}
+      },
+        S.gLoad?sp(16,'#ccc','#555'):el('svg',{width:'18',height:'18',viewBox:'0 0 48 48'},
+          el('path',{fill:'#EA4335',d:'M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z'}),
+          el('path',{fill:'#4285F4',d:'M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z'}),
+          el('path',{fill:'#FBBC05',d:'M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z'}),
+          el('path',{fill:'#34A853',d:'M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z'})
+        ),
+        S.gLoad?'Signing in...':'Continue with Google'
+      ),
+      // Divider
+      el('div',{style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'13px'}},
+        el('div',{style:{flex:1,height:'1px',background:'var(--line)'}}),
+        el('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-faint)',textTransform:'uppercase'}},'or'),
+        el('div',{style:{flex:1,height:'1px',background:'var(--line)'}})
+      ),
+      // Email+pass
+      el('div',{style:{display:'flex',flexDirection:'column',gap:'9px'}},
+        el('input',{class:'inp',type:'email',placeholder:'Email address',value:S.lEmail,onInput:e=>set({lEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&doLogin()}),
+        el('div',{style:{position:'relative'}},
+          el('input',{class:'inp',type:S.lShowPass?'text':'password',placeholder:'Password',style:{paddingRight:'40px'},value:S.lPass,onInput:e=>set({lPass:e.target.value}),onKeydown:e=>e.key==='Enter'&&doLogin()}),
+          el('button',{onClick:()=>set({lShowPass:!S.lShowPass}),style:{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',color:'var(--ink-faint)'}},ic(S.lShowPass?'eyeoff':'eye',14))
+        ),
+        el('button',{class:'btn ba',style:{width:'100%',justifyContent:'center'},disabled:S.lLoading,onClick:doLogin},
+          S.lLoading?sp():null,S.lLoading?'Signing in...':'Sign In')
+      )
+    )
+  );
+}
+
+// ═══════════════════════ SUPER ADMIN LAYOUT ═══════════════════════
+function renderSidebar(){
+  const navs=[
+    {id:'dashboard',l:'Dashboard',i:'dash'},
+    {id:'hotels',l:'All Hotels',i:'hotel',bdg:S.hotels.filter(h=>!h.approved).length},
+    {id:'payments',l:'Payments & Plans',i:'money'},
+    {id:'admins',l:'Hotel Admins',i:'users'},
+    {id:'share',l:'Share Access',i:'share'},
+    {id:'analytics',l:'Analytics',i:'bar'},
+    {id:'bookings',l:'Bookings',i:'book'},
+    {id:'activity',l:'Activity Log',i:'act'},
+  ];
+  return el('div',{class:'sidebar'},
+    el('div',{style:{padding:'14px 14px 8px',borderBottom:'1px solid var(--line)',marginBottom:'6px'}},
+      el('div',{style:{display:'flex',alignItems:'center',gap:'9px'}},
+        el('div',{style:{width:'34px',height:'34px',borderRadius:'9px',background:'linear-gradient(135deg,#E8631C,#F2A65A)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'900',fontSize:'16px',fontFamily:'Fraunces,serif'}},'H'),
+        el('div',{},
+          el('p',{style:{fontSize:'12px',fontWeight:'700',fontFamily:'Fraunces,serif',color:'var(--ink)'}},'HotelRadar'),
+          el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--accent)',textTransform:'uppercase',letterSpacing:'.05em'}},'Super Admin')
+        )
+      )
+    ),
+    el('div',{style:{flex:1,padding:'4px 0'}},
+      ...navs.map(n=>el('div',{class:'ni'+(S.tab===n.id?' on':''),onClick:()=>set({tab:n.id})},
+        el('span',{},ic(n.i,14)),n.l,
+        n.bdg>0?el('span',{class:'bdg'},n.bdg):null
+      ))
+    ),
+    el('div',{style:{padding:'10px 8px',borderTop:'1px solid var(--line)'}},
+      el('div',{class:'ni',onClick:doSignOut},ic('logout',14),'Sign Out'))
+  );
+}
+
+function renderTopbar(){
+  const titles={dashboard:'Dashboard',hotels:'All Hotels',payments:'Payments & Plans',admins:'Hotel Admins',share:'Share Admin Access',analytics:'Analytics',bookings:'All Bookings',activity:'Activity Log'};
+  return el('div',{class:'topbar'},
+    el('div',{},el('h2',{style:{fontSize:'16px',fontFamily:'Fraunces,serif',color:'var(--ink)'}},IS_HOTEL_MODE?(S.myHotel?.name||'Hotel Panel'):titles[S.tab]||'')),
+    el('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},
+      el('div',{style:{width:'30px',height:'30px',borderRadius:'50%',background:'var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontSize:'12px',fontWeight:'700'}},
+        (S.user?.email||'A')[0].toUpperCase()),
+      el('button',{style:{color:'var(--ink-soft)',display:'flex',alignItems:'center',gap:'4px',fontSize:'12px',fontWeight:'600'},onClick:doSignOut},ic('logout',13))
+    )
+  );
+}
+
+// ═══════════════════════ SUPER ADMIN TABS ═══════════════════════
+
+function renderDashboardS(){
+  const stats=[
+    {v:S.hotels.length,l:'Hotels',c:'var(--accent)',i:'hotel'},
+    {v:S.sharedAdmins.length,l:'Admins',c:'var(--blue)',i:'users'},
+    {v:'₹'+S.payments.reduce((s,p)=>s+Number(p.amount||0),0).toLocaleString('en-IN'),l:'Revenue',c:'var(--good)',i:'money'},
+    {v:S.bookings.length,l:'Bookings',c:'var(--purple)',i:'book'},
+  ];
+  const pending=S.hotels.filter(h=>!h.approved);
+  const topQ=getTopQ();
+  return el('div',{class:'content fi'},
+    el('div',{class:'g3',style:{marginBottom:'20px'}},
+      ...stats.map(s=>el('div',{class:'card scard'},el('div',{style:{color:s.c}},ic(s.i,20)),el('div',{class:'sval',style:{color:s.c}},String(s.v)),el('div',{class:'slbl'},s.l)))
+    ),
+    el('div',{class:'g2',style:{gap:'14px',marginBottom:'20px'}},
+      // Pending
+      el('div',{class:'card',style:{padding:'14px'}},
+        el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}},
+          el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Pending Approval'),
+          el('span',{class:'b ba2'},pending.length)
+        ),
+        pending.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'16px 0'}},'All hotels approved ✓'):
+        el('div',{},pending.slice(0,4).map(h=>
+          el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px',padding:'7px 0',borderBottom:'1px solid var(--line)'}},
+            el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},h.name),el('p',{style:{fontSize:'10px',color:'var(--ink-soft)'}},h.city)),
+            el('div',{style:{display:'flex',gap:'4px'}},
+              el('button',{class:'btn bg',style:{padding:'4px 9px',fontSize:'10px'},onClick:async()=>{await togField(h.id,'approved',true);toast(h.name+' approved!');}},ic('check',10),'OK'),
+              el('button',{class:'btn br',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>set({deleteId:h.id,deleteType:'hotel'})},ic('trash',10))
+            )
+          )
+        ))
+      ),
+      // Top searches
+      el('div',{class:'card',style:{padding:'14px'}},
+        el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'Top Searches'),
+        topQ.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'16px 0'}},'No search data yet'):
+        el('div',{},topQ.slice(0,6).map((s,i)=>
+          el('div',{style:{display:'flex',alignItems:'center',gap:'8px',padding:'5px 0',borderBottom:i<5?'1px solid var(--line)':'none'}},
+            el('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-faint)',width:'14px'}},(i+1)+'.'),
+            el('span',{style:{flex:1,fontSize:'12px',fontWeight:'600'}},s.q),
+            el('span',{class:'b bb2'},s.c)
+          )
+        ))
+      )
+    ),
+    // Revenue + overdue
+    el('div',{class:'card',style:{padding:'14px',marginBottom:'16px'}},
+      el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'Overdue Accounts'),
+      (() => {
+        const due=S.sharedAdmins.filter(a=>a.planExpiry&&new Date(a.planExpiry)<new Date());
+        return due.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'12px 0'}},'No overdue accounts ✓'):
+        el('div',{},due.map(a=>
+          el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px',padding:'8px 0',borderBottom:'1px solid var(--line)'}},
+            el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},a.email),el('p',{style:{fontSize:'10px',color:'#DC2626'}},'Expired: '+fmt(a.planExpiry))),
+            el('button',{class:'btn bg',style:{padding:'5px 10px',fontSize:'10px'},onClick:()=>markPaid(a.key)},ic('check',10),'Mark Paid')
+          )
+        ))
+      })()
+    )
+  );
+}
+
+function getTopQ(){
+  const c={};
+  S.searchLogs.forEach(l=>{if(l.query)c[l.query]=(c[l.query]||0)+1;});
+  return Object.entries(c).sort((a,b)=>b[1]-a[1]).map(([q,count])=>({q,c:count}));
+}
+
+function renderHotelsS(){
+  const filtered=S.hotels.filter(h=>{
+    const q=(S.hotelSearch||'').toLowerCase();
+    return !q||h.name?.toLowerCase().includes(q)||h.city?.toLowerCase().includes(q)||(h.phone||'').includes(q);
+  });
+  return el('div',{class:'content fi'},
+    el('div',{style:{display:'flex',gap:'10px',marginBottom:'14px',flexWrap:'wrap'}},
+      el('div',{style:{position:'relative',flex:1,minWidth:'160px'}},
+        el('input',{class:'inp',placeholder:'Search hotels...',value:S.hotelSearch||'',onInput:e=>set({hotelSearch:e.target.value})})
+      ),
+      el('button',{class:'btn ba',onClick:()=>set({showAddHotel:true,editHotel:null,hForm:eHotel(),hFormErr:'',amenityInput:''})},ic('plus',13),'Add Hotel')
+    ),
+    el('div',{style:{overflowX:'auto'}},
+      el('table',{class:'tbl'},
+        el('thead',{},el('tr',{},['','Hotel','City','Price','Plan','Status','Actions'].map(h=>el('th',{},h)))),
+        el('tbody',{},
+          filtered.length===0?[el('tr',{},el('td',{colspan:'7',style:{textAlign:'center',color:'var(--ink-faint)',padding:'40px'}},'No hotels'))]:
+          filtered.map(h=>el('tr',{},
+            el('td',{style:{fontSize:'18px'}},h.emoji||'🏨'),
+            el('td',{},el('div',{style:{fontWeight:'700',fontSize:'12px'}},h.name),el('div',{style:{fontSize:'10px',color:'var(--ink-soft)'}},h.area||'')),
+            el('td',{},h.city),
+            el('td',{style:{fontWeight:'700'}},'₹'+Number(h.price||0).toLocaleString('en-IN')),
+            el('td',{},el('span',{class:'b '+(h.plan==='spotlight'?'bp2':h.plan==='priority'?'bb2':'ba2')},h.plan||'basic')),
+            el('td',{},h.approved?el('span',{class:'b bg2'},'Live'):el('span',{class:'b br2'},'Pending')),
+            el('td',{},el('div',{style:{display:'flex',gap:'4px'}},
+              el('button',{class:'btn',style:{padding:'4px 7px',background:h.approved?'var(--good-dim)':'#FEF3C7',color:h.approved?'var(--good)':'#92400E'},onClick:async()=>{await togField(h.id,'approved',!h.approved);toast(h.approved?'Unapproved':'Approved!');}},ic(h.approved?'check':'warn',11)),
+              el('button',{class:'btn',style:{padding:'4px 7px',background:'var(--paper-dim)',color:'var(--ink-soft)'},onClick:()=>set({editHotel:h,showAddHotel:true,hForm:{...h,price:String(h.price||''),rating:String(h.rating||'4.5'),reviewCount:String(h.reviewCount||0)},hFormErr:'',amenityInput:''})},ic('edit',11)),
+              el('button',{class:'btn',style:{padding:'4px 7px',background:'#FEF2F2',color:'#EF4444'},onClick:()=>set({deleteId:h.id,deleteType:'hotel'})},ic('trash',11))
+            ))
+          ))
+        )
+      )
+    )
+  );
+}
+
+function renderPaymentsS(){
+  const due=S.sharedAdmins.filter(a=>a.planExpiry&&new Date(a.planExpiry)<new Date());
+  return el('div',{class:'content fi'},
+    el('div',{class:'g3',style:{marginBottom:'16px'}},
+      el('div',{class:'card scard'},el('div',{style:{color:'var(--good)'}},ic('money',20)),el('div',{class:'sval',style:{color:'var(--good)'}},'₹'+S.payments.reduce((s,p)=>s+Number(p.amount||0),0).toLocaleString('en-IN')),el('div',{class:'slbl'},'Total Earned')),
+      el('div',{class:'card scard'},el('div',{style:{color:'var(--blue)'}},ic('check',20)),el('div',{class:'sval',style:{color:'var(--blue)'}},S.payments.length),el('div',{class:'slbl'},'Payments')),
+      el('div',{class:'card scard'},el('div',{style:{color:'#EF4444'}},ic('warn',20)),el('div',{class:'sval',style:{color:'#EF4444'}},due.length),el('div',{class:'slbl'},'Overdue'))
+    ),
+    el('div',{class:'card',style:{overflow:'hidden',marginBottom:'14px'}},
+      el('div',{style:{padding:'12px 16px',borderBottom:'1px solid var(--line)'}},el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Hotel Admin Plans')),
+      el('table',{class:'tbl'},
+        el('thead',{},el('tr',{},['Email','Plan','Expiry','Status','Actions'].map(h=>el('th',{},h)))),
+        el('tbody',{},
+          S.sharedAdmins.length===0?[el('tr',{},el('td',{colspan:'5',style:{textAlign:'center',color:'var(--ink-faint)',padding:'30px'}},'No admins yet'))]:
+          S.sharedAdmins.map(a=>{
+            const exp=a.planExpiry&&new Date(a.planExpiry)<new Date();
+            return el('tr',{},
+              el('td',{style:{fontWeight:'600',fontSize:'12px'}},a.email),
+              el('td',{},el('span',{class:'b '+(a.plan==='paid'?'bg2':'ba2')},a.plan==='paid'?'Paid ₹999/mo':'Free Trial')),
+              el('td',{style:{color:exp?'#EF4444':'var(--ink)',fontSize:'12px'}},fmt(a.planExpiry)+(exp?' ⚠️':'')),
+              el('td',{},el('span',{class:'b '+(a.active?'bg2':'br2')},a.active?'Active':'Inactive')),
+              el('td',{},el('div',{style:{display:'flex',gap:'4px'}},
+                el('button',{class:'btn bg',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>markPaid(a.key)},ic('check',10),'Paid'),
+                el('button',{class:'btn br',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>revokeAdmin(a.key)},ic('x',10),'Revoke')
+              ))
+            );
+          })
+        )
+      )
+    ),
+    S.payments.length>0&&el('div',{class:'card',style:{overflow:'hidden'}},
+      el('div',{style:{padding:'12px 16px',borderBottom:'1px solid var(--line)'}},el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Payment History')),
+      el('table',{class:'tbl'},
+        el('thead',{},el('tr',{},['Admin','Amount','Date','Status'].map(h=>el('th',{},h)))),
+        el('tbody',{},S.payments.map(p=>el('tr',{},
+          el('td',{},p.adminEmail||'—'),
+          el('td',{style:{fontWeight:'700',color:'var(--good)'}},'₹'+Number(p.amount||0).toLocaleString('en-IN')),
+          el('td',{},fmt(p.date)),
+          el('td',{},el('span',{class:'b '+(p.status==='paid'?'bg2':'br2')},p.status||'—'))
+        )))
+      )
+    )
+  );
+}
+
+function renderAdminsS(){
+  return el('div',{class:'content fi'},
+    el('div',{style:{display:'flex',justifyContent:'flex-end',marginBottom:'14px'}},
+      el('button',{class:'btn ba',onClick:()=>set({showShare:true,shareEmail:'',shareErr:'',generatedLink:''})},ic('share',13),'Share Admin Access')
+    ),
+    el('div',{class:'card',style:{overflow:'hidden'}},
+      el('table',{class:'tbl'},
+        el('thead',{},el('tr',{},['Email','Plan','Active','Expiry','Actions'].map(h=>el('th',{},h)))),
+        el('tbody',{},
+          S.sharedAdmins.length===0?[el('tr',{},el('td',{colspan:'5',style:{textAlign:'center',color:'var(--ink-faint)',padding:'36px'}},'No hotel admins yet'))]:
+          S.sharedAdmins.map(a=>{
+            const exp=a.planExpiry&&new Date(a.planExpiry)<new Date();
+            return el('tr',{},
+              el('td',{style:{fontWeight:'600',fontSize:'12px'}},a.email),
+              el('td',{},el('span',{class:'b '+(a.plan==='paid'?'bg2':'ba2')},a.plan==='paid'?'₹999/mo':'Free')),
+              el('td',{},el('div',{class:'tog'+(a.active?' on':''),onClick:()=>db.ref(`sharedAdmins/${a.key}`).update({active:!a.active})})),
+              el('td',{style:{color:exp?'#EF4444':'var(--ink)',fontSize:'12px'}},fmt(a.planExpiry)+(exp?' ⚠️':'')),
+              el('td',{},el('div',{style:{display:'flex',gap:'4px'}},
+                el('button',{class:'btn bg',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>markPaid(a.key)},ic('check',10),'Paid'),
+                el('button',{class:'btn br',style:{padding:'4px 9px',fontSize:'10px'},onClick:()=>revokeAdmin(a.key)},ic('x',10),'Revoke')
+              ))
+            );
+          })
+        )
+      )
+    )
+  );
+}
+
+function renderShareS(){
+  return el('div',{class:'content fi'},
+    el('div',{class:'g2',style:{gap:'16px'}},
+      // Share form
+      el('div',{class:'card',style:{padding:'18px'}},
+        el('h3',{style:{fontSize:'15px',color:'var(--ink)',marginBottom:'6px'}},'Share Hotel Admin Access'),
+        el('p',{style:{fontSize:'12px',color:'var(--ink-soft)',lineHeight:'1.6',marginBottom:'14px'}},'Enter hotel owner Gmail → A unique link will be generated → Share that link with the hotel owner → They login with their Google account and get their own admin panel.'),
+        S.shareErr?el('div',{style:{display:'flex',alignItems:'center',gap:'6px',padding:'8px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',marginBottom:'10px',fontSize:'12px',color:'#DC2626'}},ic('warn',12),S.shareErr):null,
+        lbl('Hotel Owner Gmail *'),
+        el('input',{class:'inp',type:'email',placeholder:'hotelowner@gmail.com',value:S.shareEmail,style:{marginBottom:'12px'},onInput:e=>set({shareEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&shareAdmin()}),
+        el('button',{class:'btn ba',style:{width:'100%',justifyContent:'center'},disabled:S.shareSaving,onClick:shareAdmin},
+          S.shareSaving?sp():ic('share',13),S.shareSaving?'Sharing...':'Generate Link & Share Access'),
+        // Generated link
+        S.generatedLink?el('div',{style:{marginTop:'16px'}},
+          el('p',{style:{fontSize:'10px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'.06em',color:'var(--good)',marginBottom:'6px'}},'✅ Link Generated! Share this with hotel owner:'),
+          el('div',{class:'link-box'},
+            el('span',{style:{flex:1,wordBreak:'break-all'}},S.generatedLink),
+            el('button',{style:{flexShrink:0,display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'var(--accent)',color:'#fff',fontWeight:'700',fontSize:'11px',borderRadius:'6px'},
+              onClick:()=>{navigator.clipboard.writeText(S.generatedLink);toast('Link copied!');}},ic('copy',12),'Copy')
+          ),
+          el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginTop:'8px',lineHeight:'1.6'}},'📋 When hotel owner opens this link → They sign in with Google → They see their Hotel Admin Panel with Dashboard, Bookings, Reviews etc.')
+        ):null,
+        el('div',{style:{marginTop:'14px',padding:'12px',background:'var(--good-dim)',borderRadius:'var(--r-sm)'}},
+          el('p',{style:{fontSize:'11px',color:'var(--good)',lineHeight:'1.7',fontWeight:'600'}},'✓ 30 days FREE trial automatically\n✓ After trial: ₹999/month or ₹49/booking\n✓ Hotel owner sees only their hotel data\n✓ You stay in full control')
+        )
+      ),
+      // Active admins
+      el('div',{class:'card',style:{padding:'18px'}},
+        el('h3',{style:{fontSize:'14px',color:'var(--ink)',marginBottom:'12px'}},'Active Hotel Admins ('+S.sharedAdmins.length+')'),
+        S.sharedAdmins.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'20px 0'}},'No hotel admins yet'):
+        el('div',{style:{display:'flex',flexDirection:'column',gap:'8px'}},
+          ...S.sharedAdmins.map(a=>{
+            const exp=a.planExpiry&&new Date(a.planExpiry)<new Date();
+            const link=`${location.origin}${location.pathname}?admin=${encodeURIComponent(a.email)}`;
+            return el('div',{style:{padding:'10px 12px',background:exp?'#FEF2F2':'var(--paper-dim)',borderRadius:'var(--r-sm)',border:'1px solid '+(exp?'#FECACA':'var(--line)')}},
+              el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',gap:'8px',marginBottom:'6px'}},
+                el('div',{style:{minWidth:0}},
+                  el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}},a.email),
+                  el('p',{style:{fontSize:'10px',color:exp?'#DC2626':'var(--ink-soft)'}},exp?'⚠️ Expired: '+fmt(a.planExpiry):'Valid: '+fmt(a.planExpiry))
+                ),
+                el('div',{style:{display:'flex',gap:'4px',flexShrink:0}},
+                  el('button',{style:{display:'flex',alignItems:'center',gap:'3px',padding:'4px 8px',background:'var(--blue-dim)',color:'var(--blue)',fontWeight:'700',fontSize:'10px',borderRadius:'6px'},
+                    onClick:()=>{navigator.clipboard.writeText(link);toast('Link copied!');}},ic('copy',10),'Link'),
+                  el('button',{class:'btn br',style:{padding:'4px 8px',fontSize:'10px'},onClick:()=>revokeAdmin(a.key)},ic('x',10))
+                )
+              )
+            );
+          })
+        )
+      )
+    )
+  );
+}
+
+function renderAnalyticsS(){
+  const topQ=getTopQ();
+  const cities={};S.hotels.forEach(h=>{if(h.city)cities[h.city]=(cities[h.city]||0)+1;});
+  const topCities=Object.entries(cities).sort((a,b)=>b[1]-a[1]).slice(0,8);
+  return el('div',{class:'content fi'},
+    el('div',{class:'g2',style:{gap:'14px',marginBottom:'14px'}},
+      el('div',{class:'card',style:{padding:'14px'}},
+        el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'What Customers Search'),
+        topQ.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'20px'}},'No search data yet'):
+        el('div',{},topQ.slice(0,10).map((s,i)=>el('div',{style:{display:'flex',gap:'8px',padding:'6px 0',borderBottom:i<topQ.length-1?'1px solid var(--line)':'none'}},
+          el('span',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-faint)',width:'14px'}},(i+1)+'.'),
+          el('span',{style:{flex:1,fontSize:'12px',fontWeight:'600'}},s.q),
+          el('span',{class:'b bb2'},s.c+'x')
+        )))
+      ),
+      el('div',{class:'card',style:{padding:'14px'}},
+        el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'Hotels by City'),
+        topCities.length===0?el('p',{style:{fontSize:'12px',color:'var(--ink-faint)',textAlign:'center',padding:'20px'}},'No data'):
+        el('div',{},topCities.map(([c,n],i)=>el('div',{style:{display:'flex',gap:'8px',padding:'6px 0',borderBottom:i<topCities.length-1?'1px solid var(--line)':'none'}},
+          el('span',{style:{flex:1,fontSize:'12px',fontWeight:'600'}},c),
+          el('span',{class:'b bb2'},n+' hotels')
+        )))
+      )
+    )
+  );
+}
+
+function renderBookingsS(){
+  return el('div',{class:'content fi'},
+    el('div',{class:'g3',style:{marginBottom:'14px'}},
+      el('div',{class:'card scard'},el('div',{style:{color:'var(--accent)'}},ic('book',20)),el('div',{class:'sval',style:{color:'var(--accent)'}},S.bookings.length),el('div',{class:'slbl'},'Total')),
+      el('div',{class:'card scard'},el('div',{style:{color:'var(--good)'}},ic('check',20)),el('div',{class:'sval',style:{color:'var(--good)'}},S.bookings.filter(b=>b.status==='confirmed').length),el('div',{class:'slbl'},'Confirmed')),
+      el('div',{class:'card scard'},el('div',{style:{color:'#F59E0B'}},ic('warn',20)),el('div',{class:'sval',style:{color:'#F59E0B'}},S.bookings.filter(b=>!b.status||b.status==='pending').length),el('div',{class:'slbl'},'Pending'))
+    ),
+    el('div',{class:'card',style:{overflow:'hidden'}},
+      el('table',{class:'tbl'},
+        el('thead',{},el('tr',{},['Guest','Hotel','Phone','Check-in','Rooms','Status','Date'].map(h=>el('th',{},h)))),
+        el('tbody',{},S.bookings.length===0?[el('tr',{},el('td',{colspan:'7',style:{textAlign:'center',color:'var(--ink-faint)',padding:'36px'}},'No bookings'))]:
+          S.bookings.slice().reverse().map(b=>el('tr',{},
+            el('td',{style:{fontWeight:'600',fontSize:'12px'}},b.name||'—'),
+            el('td',{style:{fontSize:'12px'}},b.hotelName||b.hotelId||'—'),
+            el('td',{style:{fontSize:'12px'}},b.phone||'—'),
+            el('td',{style:{fontSize:'12px'}},fmt(b.checkIn)),
+            el('td',{style:{fontSize:'12px'}},b.rooms||'1'),
+            el('td',{},el('span',{class:'b '+(b.status==='confirmed'?'bg2':b.status==='cancelled'?'br2':'ba2')},b.status||'pending')),
+            el('td',{style:{fontSize:'11px',color:'var(--ink-soft)'}},fmtT(b.createdAt))
+          ))
+        )
+      )
+    )
+  );
+}
+
+function renderActivityS(){
+  const logs=[
+    ...S.payments.map(p=>({t:p.date,msg:'Payment ₹'+p.amount+' from '+p.adminEmail,c:'var(--good)'})),
+    ...S.sharedAdmins.map(a=>({t:a.addedAt,msg:'Access shared to '+a.email,c:'var(--blue)'})),
+    ...S.hotels.map(h=>({t:h.createdAt,msg:'Hotel added: '+h.name+' ('+h.city+')',c:'var(--accent)'})),
+    ...S.bookings.map(b=>({t:b.createdAt,msg:'Booking: '+(b.name||'Guest')+' → '+(b.hotelName||b.hotelId||'hotel'),c:'var(--purple)'})),
+  ].sort((a,b)=>new Date(b.t||0)-new Date(a.t||0));
+  return el('div',{class:'content fi'},
+    el('div',{class:'card',style:{padding:'16px'}},
+      el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'12px'}},'Activity Log ('+logs.length+' events)'),
+      logs.length===0?el('p',{style:{textAlign:'center',color:'var(--ink-faint)',padding:'32px',fontSize:'12px'}},'No activity yet'):
+      el('div',{},logs.slice(0,60).map((l,i)=>
+        el('div',{style:{display:'flex',gap:'10px',padding:'8px 0',borderBottom:i<logs.length-1?'1px solid var(--line)':'none'}},
+          el('div',{style:{width:'7px',height:'7px',borderRadius:'50%',background:l.c,marginTop:'5px',flexShrink:0}}),
+          el('div',{style:{flex:1}},
+            el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},l.msg),
+            el('p',{style:{fontSize:'10px',color:'var(--ink-faint)',marginTop:'1px'}},fmtT(l.t))
+          )
+        )
+      ))
+    )
+  );
+}
+
+// ═══════════════════════ SMALL ADMIN TABS ═══════════════════════
+function getMyPlan(){
+  const a=S.myAdminData;if(!a)return{st:'none',label:'No Plan',days:0};
+  if(!a.planExpiry)return{st:'free',label:'Free Trial',days:30};
+  const days=Math.ceil((new Date(a.planExpiry)-new Date())/(864e5));
+  if(days<=0)return{st:'expired',label:'Expired',days:0};
+  return{st:a.plan==='paid'?'paid':'free',label:a.plan==='paid'?'Paid Plan':'Free Trial',days};
+}
+
+function renderDashboardH(){
+  const h=S.myHotel,bk=S.myBookings,rv=S.myReviews;
+  const plan=getMyPlan();
+  const avgR=rv.length?(rv.reduce((s,r)=>s+Number(r.rating||0),0)/rv.length).toFixed(1):'—';
+  const confirmed=bk.filter(b=>b.status==='confirmed').length;
+  return el('div',{class:'content fi'},
+    // Plan banner
+    el('div',{class:'pl-ban '+(plan.st==='expired'?'pl-exp':plan.st==='paid'?'pl-paid':'pl-free')},
+      el('div',{},
+        el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},(plan.st==='free'?'🎉 Free Trial Active':plan.st==='paid'?'✅ Paid Plan Active':'⚠️ Plan Expired')),
+        el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginTop:'2px'}},(plan.st==='expired'?'Renew to keep hotel listed.':'Valid till: '+fmt(S.myAdminData?.planExpiry)+(plan.days>0?' ('+plan.days+' days left)':'')))
+      ),
+      plan.st==='expired'?el('button',{style:{padding:'7px 14px',background:'#EF4444',color:'#fff',fontWeight:'700',fontSize:'12px',borderRadius:'8px',cursor:'pointer'},onClick:()=>set({showPayment:true,tab:'plan'})},'Renew Now'):null
+    ),
+    // Stats
+    el('div',{class:'g3',style:{marginBottom:'16px'}},
+      el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'👁'),el('div',{class:'sval',style:{color:'var(--blue)'}},h?.reviewCount||0),el('div',{class:'slbl'},'Profile Views')),
+      el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'📅'),el('div',{class:'sval',style:{color:'var(--accent)'}},bk.length),el('div',{class:'slbl'},'Bookings')),
+      el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'✅'),el('div',{class:'sval',style:{color:'var(--good)'}},confirmed),el('div',{class:'slbl'},'Confirmed')),
+      el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'⭐'),el('div',{class:'sval',style:{color:'#F59E0B'}},avgR),el('div',{class:'slbl'},'Avg Rating'))
+    ),
+    // Quick hotel info
+    h?el('div',{class:'card',style:{padding:'14px',marginBottom:'12px'}},
+      el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}},
+        el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Hotel Overview'),
+        el('button',{style:{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'var(--accent-dim)',color:'var(--accent-ink)',fontWeight:'700',fontSize:'11px',borderRadius:'6px',cursor:'pointer'},onClick:()=>set({tab:'hotel'})},ic('edit',12),'Edit')
+      ),
+      el('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}},
+        ...[['📍 Location',`${h.area||''}, ${h.city}`],['📞 Phone',h.phone||'—'],['💰 Price','₹'+Number(h.price||0).toLocaleString('en-IN')+'/night'],['🏷️ Status',h.approved?'✅ Live on HotelRadar':'⏳ Pending Approval']].map(([l,v])=>
+          el('div',{style:{background:'var(--paper-dim)',borderRadius:'8px',padding:'8px'}},
+            el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ink-faint)',marginBottom:'2px'}},l),
+            el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},v)
+          )
+        )
+      )
+    ):el('div',{class:'card',style:{padding:'28px',textAlign:'center',marginBottom:'12px'}},
+      el('p',{style:{fontSize:'28px',marginBottom:'8px'}},'🏨'),
+      el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'Add Your Hotel Profile'),
+      el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginBottom:'14px'}},'Fill in your details to get listed on HotelRadar.'),
+      el('button',{class:'btn ba',onClick:()=>set({tab:'hotel',showAddHotel:true,hForm:eHotel(),hFormErr:''})},ic('plus',13),'Add Hotel Profile')
+    ),
+    // Recent bookings
+    el('div',{class:'card',style:{overflow:'hidden'}},
+      el('div',{style:{padding:'10px 14px',borderBottom:'1px solid var(--line)',display:'flex',alignItems:'center',justifyContent:'space-between'}},
+        el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Recent Bookings'),
+        el('button',{style:{fontSize:'11px',fontWeight:'700',color:'var(--accent)',cursor:'pointer'},onClick:()=>set({tab:'bookings'})},'View All →')
+      ),
+      bk.length===0?el('p',{style:{padding:'20px',textAlign:'center',color:'var(--ink-faint)',fontSize:'12px'}},'No bookings yet'):
+      el('div',{},bk.slice().reverse().slice(0,3).map(b=>
+        el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 14px',borderBottom:'1px solid var(--line)'}},
+          el('div',{},
+            el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},b.name||'Guest'),
+            el('p',{style:{fontSize:'10px',color:'var(--ink-soft)',marginTop:'1px'}},fmt(b.checkIn)+' · '+b.guests+' guests')
+          ),
+          el('span',{class:'b '+(b.status==='confirmed'?'bg2':b.status==='cancelled'?'br2':'ba2')},b.status||'pending')
+        )
+      ))
+    )
+  );
+}
+
+function renderHotelH(){
+  const h=S.myHotel;
+  return el('div',{class:'content fi'},
+    el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}},
+      el('h2',{style:{fontSize:'17px',color:'var(--ink)'}},'My Hotel Profile'),
+      el('button',{class:'btn ba',onClick:()=>set({showAddHotel:true,editHotel:h,hForm:h?{...h,price:String(h.price||''),rating:String(h.rating||'4.5'),reviewCount:String(h.reviewCount||0)}:eHotel(),hFormErr:'',amenityInput:''})},ic('edit',13),h?'Edit Profile':'Add Profile')
+    ),
+    !h?el('div',{class:'card',style:{padding:'40px',textAlign:'center'}},
+      el('p',{style:{fontSize:'36px',marginBottom:'12px'}},'🏨'),
+      el('p',{style:{fontSize:'14px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'No Hotel Profile Yet'),
+      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)',marginBottom:'14px',lineHeight:'1.6'}},'Add your hotel details. After admin approval, your hotel will appear in search results.'),
+      el('button',{class:'btn ba',onClick:()=>set({showAddHotel:true,hForm:eHotel(),hFormErr:''})},ic('plus',13),'Add Hotel Profile')
+    ):el('div',{style:{display:'flex',flexDirection:'column',gap:'12px'}},
+      // Card preview
+      el('div',{class:'card',style:{overflow:'hidden'}},
+        el('div',{style:{height:'100px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'44px',background:h.gradient||'var(--accent)'}},h.emoji||'🏨'),
+        el('div',{style:{padding:'14px'}},
+          el('div',{style:{display:'flex',justifyContent:'space-between',gap:'8px',marginBottom:'8px'}},
+            el('div',{},el('h3',{style:{fontSize:'15px',color:'var(--ink)'}},h.name),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginTop:'2px'}},`${h.area||''}, ${h.city}, ${h.state}`)),
+            el('div',{style:{textAlign:'right'}},el('p',{style:{fontSize:'15px',fontWeight:'700',color:'var(--ink)'}},'₹'+Number(h.price||0).toLocaleString('en-IN')),el('p',{style:{fontSize:'10px',color:'var(--ink-faint)'}},'per night'))
+          ),
+          h.desc&&el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',lineHeight:'1.6',marginBottom:'8px'}},h.desc),
+          el('div',{style:{display:'flex',flexWrap:'wrap',gap:'5px'}},
+            ...(h.amenities||[]).slice(0,6).map(a=>el('span',{class:'b bx'},a)),
+            h.amenities?.length>6&&el('span',{class:'b bx'},'+'+( h.amenities.length-6)+' more')
+          )
+        )
+      ),
+      el('div',{class:'card',style:{padding:'12px 14px',display:'flex',alignItems:'center',justifyContent:'space-between'}},
+        el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},'Listing Status'),
+        el('span',{class:'b '+(h.approved?'bg2':'ba2')},h.approved?'✅ Live on HotelRadar':'⏳ Pending Admin Approval')
+      )
+    )
+  );
+}
+
+function renderBookingsH(){
+  const bk=S.myBookings;
+  return el('div',{class:'content fi'},
+    el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}},
+      el('h2',{style:{fontSize:'17px',color:'var(--ink)'}},'Booking Requests'),
+      el('span',{class:'b bb2'},bk.length+' total')
+    ),
+    bk.length===0?el('div',{class:'card',style:{padding:'48px',textAlign:'center'}},
+      el('p',{style:{fontSize:'32px',marginBottom:'10px'}},'📅'),
+      el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'No Bookings Yet'),
+      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)'}},'Customer booking requests will appear here.')
+    ):el('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}},
+      ...bk.slice().reverse().map(b=>
+        el('div',{class:'card',style:{padding:'14px'}},
+          el('div',{style:{display:'flex',justifyContent:'space-between',gap:'8px',marginBottom:'10px'}},
+            el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},b.name||'Guest'),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginTop:'2px'}},'📞 '+b.phone)),
+            el('span',{class:'b '+(b.status==='confirmed'?'bg2':b.status==='cancelled'?'br2':'ba2')},b.status||'pending')
+          ),
+          el('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px',marginBottom:'10px'}},
+            ...[['📅 Check-in',fmt(b.checkIn)],['📅 Check-out',fmt(b.checkOut)],['👥 Guests',b.guests+' guests'],['🚪 Rooms',b.rooms+' room(s)']].map(([l,v])=>
+              el('div',{style:{background:'var(--paper-dim)',borderRadius:'8px',padding:'7px'}},
+                el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ink-faint)',marginBottom:'2px'}},l),
+                el('p',{style:{fontSize:'11px',fontWeight:'600',color:'var(--ink)'}},v)
+              )
+            )
+          ),
+          b.requests&&el('div',{style:{padding:'7px 10px',background:'var(--accent-dim)',borderRadius:'8px',marginBottom:'8px',fontSize:'11px',color:'var(--accent-ink)'}},'📝 '+b.requests),
+          (!b.status||b.status==='pending')&&el('div',{style:{display:'flex',gap:'8px'}},
+            el('button',{class:'btn bg',style:{flex:1,justifyContent:'center'},onClick:()=>updBooking(b.id,'confirmed')},ic('check',12),'Confirm'),
+            el('button',{class:'btn br',style:{flex:1,justifyContent:'center'},onClick:()=>updBooking(b.id,'cancelled')},ic('x',12),'Cancel'),
+            el('button',{class:'btn bo',style:{padding:'9px 12px'},onClick:()=>set({deleteId:b.id,deleteType:'booking'})},ic('trash',12))
+          )
+        )
+      )
+    )
+  );
+}
+
+function renderReviewsH(){
+  const rv=S.myReviews;
+  const avg=rv.length?(rv.reduce((s,r)=>s+Number(r.rating||0),0)/rv.length).toFixed(1):'—';
+  return el('div',{class:'content fi'},
+    el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}},
+      el('h2',{style:{fontSize:'17px',color:'var(--ink)'}},'Customer Reviews'),
+      el('div',{},el('span',{style:{fontSize:'18px',fontWeight:'700',color:'#F59E0B',fontFamily:'Fraunces,serif'}},avg),el('span',{style:{fontSize:'11px',color:'var(--ink-faint)'}},' / 5 · '+rv.length+' reviews'))
+    ),
+    rv.length===0?el('div',{class:'card',style:{padding:'48px',textAlign:'center'}},
+      el('p',{style:{fontSize:'32px',marginBottom:'10px'}},'⭐'),
+      el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'No Reviews Yet'),
+      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)'}},'Customer reviews will appear here.')
+    ):el('div',{class:'card',style:{overflow:'hidden'}},
+      ...rv.map((r,i)=>el('div',{class:'rv',style:{background:i%2?'var(--paper-dim)':'var(--card)'}},
+        el('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'8px',marginBottom:'5px'}},
+          el('div',{},
+            el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},r.userName||'Anonymous'),
+            el('div',{class:'stars',style:{fontSize:'12px'}},starsStr(r.rating))
+          ),
+          el('div',{style:{display:'flex',alignItems:'center',gap:'6px'}},
+            el('span',{style:{fontSize:'10px',color:'var(--ink-faint)'}},fmt(r.date)),
+            el('button',{style:{display:'flex',alignItems:'center',padding:'3px',background:'#FEF2F2',color:'#EF4444',borderRadius:'5px',cursor:'pointer'},onClick:()=>set({deleteId:r.id,deleteType:'review'})},ic('trash',11))
+          )
+        ),
+        r.comment&&el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',lineHeight:'1.55'}},r.comment)
+      ))
+    )
+  );
+}
+
+function renderPlanH(){
+  const plan=getMyPlan();
+  return el('div',{class:'content fi'},
+    el('h2',{style:{fontSize:'17px',color:'var(--ink)',marginBottom:'14px'}},'My Plan & Billing'),
+    el('div',{class:'card',style:{padding:'18px',marginBottom:'14px',border:'2px solid '+(plan.st==='expired'?'#FCA5A5':plan.st==='paid'?'#93C5FD':'#86EFAC')}},
+      el('div',{style:{display:'flex',gap:'12px',alignItems:'center',marginBottom:'12px'}},
+        el('div',{style:{fontSize:'30px'}},plan.st==='expired'?'⚠️':plan.st==='paid'?'💳':'🎉'),
+        el('div',{},
+          el('h3',{style:{fontSize:'15px',color:'var(--ink)'}},(plan.st==='free'?'Free Trial Active':plan.st==='paid'?'Paid Plan Active':'Plan Expired')),
+          el('p',{style:{fontSize:'11px',color:'var(--ink-soft)',marginTop:'3px'}},plan.st==='expired'?'Renew to keep your hotel listed.':plan.st==='paid'?`Active till ${fmt(S.myAdminData?.planExpiry)}`:`Trial ends ${fmt(S.myAdminData?.planExpiry)} · ${plan.days} days left`)
+        )
+      ),
+      plan.st==='expired'&&el('button',{style:{width:'100%',padding:'10px',background:'#EF4444',color:'#fff',fontWeight:'700',fontSize:'13px',borderRadius:'8px',cursor:'pointer'},onClick:()=>set({showPayment:true})},'🔄 Renew Now')
+    ),
+    el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'10px'}},'Choose Your Plan'),
+    el('div',{style:{display:'flex',flexDirection:'column',gap:'10px',marginBottom:'16px'}},
+      el('div',{class:'card',style:{padding:'14px',border:'2px solid var(--good)',cursor:'pointer'},onClick:()=>set({showPayment:true,payOpt:'monthly'})},
+        el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
+          el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Monthly Plan'),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)'}},'Unlimited bookings · Full dashboard')),
+          el('div',{style:{textAlign:'right'}},el('p',{style:{fontSize:'18px',fontWeight:'700',color:'var(--good)',fontFamily:'Fraunces,serif'}},'₹999'),el('p',{style:{fontSize:'10px',color:'var(--ink-faint)'}},'per month'))
+        )
+      ),
+      el('div',{class:'card',style:{padding:'14px',border:'2px solid var(--blue)',cursor:'pointer'},onClick:()=>set({showPayment:true,payOpt:'perbooking'})},
+        el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
+          el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Pay Per Booking'),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)'}},'Pay only when you get bookings')),
+          el('div',{style:{textAlign:'right'}},el('p',{style:{fontSize:'18px',fontWeight:'700',color:'var(--blue)',fontFamily:'Fraunces,serif'}},'₹49'),el('p',{style:{fontSize:'10px',color:'var(--ink-faint)'}},'per booking'))
+        )
+      ),
+      el('div',{class:'card',style:{padding:'14px',border:'1px solid var(--line)'}},
+        el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
+          el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Free Trial'),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)'}},'First 30 days free')),
+          el('span',{class:'b bg2'},'Active on Signup')
+        )
+      )
+    ),
+    el('div',{style:{padding:'12px 14px',background:'var(--accent-dim)',borderRadius:'10px',border:'1px solid rgba(232,99,28,.15)'}},
+      el('p',{style:{fontSize:'11px',color:'var(--accent-ink)',lineHeight:'1.7',fontWeight:'600'}},'💬 To upgrade or make payment, contact HotelRadar admin. We will activate your plan immediately.')
+    )
+  );
+}
+
+function renderSettingsH(){
+  const u=S.user;
+  return el('div',{class:'content fi'},
+    el('h2',{style:{fontSize:'17px',color:'var(--ink)',marginBottom:'14px'}},'Account Settings'),
+    el('div',{class:'card',style:{padding:'16px',marginBottom:'12px'}},
+      sec('Your Account'),
+      el('div',{style:{display:'flex',alignItems:'center',gap:'12px',padding:'8px 0',borderBottom:'1px solid var(--line)',marginBottom:'10px'}},
+        u.photoURL?el('img',{src:u.photoURL,style:{width:'42px',height:'42px',borderRadius:'50%',objectFit:'cover'}}):
+          el('div',{style:{width:'42px',height:'42px',borderRadius:'50%',background:'var(--accent)',display:'flex',alignItems:'center',justifyContent:'center',color:'#fff',fontWeight:'700',fontSize:'18px'}},(u.email||'U')[0].toUpperCase()),
+        el('div',{},el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},u.displayName||'Hotel Owner'),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)'}},u.email))
+      ),
+      ...[['Plan',S.myAdminData?.plan==='paid'?'Paid ₹999/mo':'Free Trial'],['Expiry',fmt(S.myAdminData?.planExpiry)],['Access Level','Hotel Admin']].map(([l,v])=>
+        el('div',{style:{display:'flex',justifyContent:'space-between',padding:'6px 0',borderBottom:'1px solid var(--line)'}},
+          el('span',{style:{fontSize:'12px',color:'var(--ink-faint)',fontWeight:'600'}},l),
+          el('span',{style:{fontSize:'12px',color:'var(--ink)',fontWeight:'700'}},v)
+        )
+      )
+    ),
+    el('div',{class:'card',style:{padding:'16px',border:'1px solid #FECACA'}},
+      sec('Danger Zone'),
+      el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between'}},
+        el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},'Sign Out'),el('p',{style:{fontSize:'10px',color:'var(--ink-soft)'}},'You will need to sign in again')),
+        el('button',{class:'btn br',style:{fontSize:'12px'},onClick:doSignOut},ic('logout',13),'Sign Out')
+      )
+    )
+  );
+}
+
+// ═══════════════════════ HOTEL FORM ═══════════════════════
+function renderHotelForm(){
+  const f=S.hForm;
+  return el('div',{class:'ov',onClick:e=>e.target.classList.contains('ov')&&set({showAddHotel:false,editHotel:null})},
+    el('div',{style:{width:'100%',maxWidth:'580px',background:'var(--card)',borderRadius:'20px',border:'1px solid var(--line)',boxShadow:'var(--sh3)',marginBottom:'24px'},class:'fi'},
+      el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 18px',borderBottom:'1px solid var(--line)'}},
+        el('h2',{style:{fontSize:'15px',color:'var(--ink)'}},S.editHotel?'Edit Hotel':'Add Hotel'),
+        el('button',{style:{width:'28px',height:'28px',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'50%',background:'var(--paper-dim)',color:'var(--ink-soft)'},onClick:()=>set({showAddHotel:false,editHotel:null})},ic('x',13))
+      ),
+      el('div',{style:{padding:'16px',maxHeight:'68vh',overflowY:'auto',display:'flex',flexDirection:'column',gap:'14px'},class:'ns'},
+        S.hFormErr?el('div',{style:{display:'flex',alignItems:'center',gap:'7px',padding:'9px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',fontSize:'12px',color:'#DC2626'}},ic('warn',12),S.hFormErr):null,
+        el('div',{},lbl('Hotel Name *'),el('input',{class:'inp',value:f.name||'',placeholder:'e.g. Ganga Palace Hotel',onInput:e=>sf({name:e.target.value})})),
+        el('div',{class:'g2'},el('div',{},lbl('City *'),el('input',{class:'inp',value:f.city||'',placeholder:'Haridwar',onInput:e=>sf({city:e.target.value})})),el('div',{},lbl('State *'),el('input',{class:'inp',value:f.state||'',placeholder:'Uttarakhand',onInput:e=>sf({state:e.target.value})}))),
+        el('div',{class:'g2'},el('div',{},lbl('Area'),el('input',{class:'inp',value:f.area||'',placeholder:'Har Ki Pauri Road',onInput:e=>sf({area:e.target.value})})),el('div',{},lbl('Phone *'),el('input',{class:'inp',value:f.phone||'',placeholder:'+91 98765 43210',onInput:e=>sf({phone:e.target.value})}))),
+        el('div',{class:'g2'},el('div',{},lbl('Price / Night (₹) *'),el('input',{class:'inp',type:'number',value:f.price||'',placeholder:'2800',onInput:e=>sf({price:e.target.value})})),el('div',{},lbl('Hotel Type'),el('select',{class:'inp',onChange:e=>sf({type:e.target.value})},...['hotel','resort','ashram','guesthouse','dharamshala','family'].map(t=>el('option',{value:t,...(f.type===t?{selected:true}:{})},t.charAt(0).toUpperCase()+t.slice(1)))))),
+        el('div',{class:'g2'},el('div',{},lbl('Check-in'),el('input',{class:'inp',value:f.checkIn||'12:00 PM',onInput:e=>sf({checkIn:e.target.value})})),el('div',{},lbl('Check-out'),el('input',{class:'inp',value:f.checkOut||'11:00 AM',onInput:e=>sf({checkOut:e.target.value})}))),
+        el('div',{},lbl('Rating'),el('input',{class:'inp',type:'number',min:'0',max:'5',step:'0.1',value:f.rating||'4.5',onInput:e=>sf({rating:e.target.value})})),
+        el('div',{},lbl('Description'),el('textarea',{class:'inp',rows:'3',style:{resize:'none'},placeholder:'Write about your hotel...',onInput:e=>sf({desc:e.target.value})},f.desc||'')),
+        el('div',{class:'g2'},el('div',{},lbl('Emoji'),el('input',{class:'inp',value:f.emoji||'🏨',onInput:e=>sf({emoji:e.target.value})})),el('div',{},lbl('Gradient CSS'),el('input',{class:'inp',value:f.gradient||'',onInput:e=>sf({gradient:e.target.value})}))),
+        el('div',{style:{height:'40px',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px',background:f.gradient||'var(--accent)'}},f.emoji||'🏨'),
+        el('div',{},lbl('Amenities'),
+          el('div',{style:{display:'flex',flexWrap:'wrap',gap:'5px',marginBottom:'7px'}},
+            ...AMENITIES.map(a=>{const on=(f.amenities||[]).includes(a);return el('button',{class:'chip'+(on?' on':''),onClick:()=>sf({amenities:on?f.amenities.filter(x=>x!==a):[...(f.amenities||[]),a]})},a);})
+          ),
+          el('div',{style:{display:'flex',gap:'6px'}},
+            el('input',{class:'inp',style:{flex:1},placeholder:'Custom amenity...',value:S.amenityInput,onInput:e=>set({amenityInput:e.target.value}),onKeydown:e=>{if(e.key==='Enter'&&S.amenityInput.trim()){sf({amenities:[...(f.amenities||[]),S.amenityInput.trim()]});set({amenityInput:''});}}}),
+            el('button',{class:'btn ba',onClick:()=>{if(S.amenityInput.trim()){sf({amenities:[...(f.amenities||[]),S.amenityInput.trim()]});set({amenityInput:''});}}},'Add')
+          )
+        ),
+        el('div',{},lbl('Badges'),el('div',{style:{display:'flex',gap:'6px'}},
+          ...['verified','featured','priority'].map(b=>{const on=(f.badges||[]).includes(b);return el('button',{class:'chip'+(on?' on':''),onClick:()=>sf({badges:on?f.badges.filter(x=>x!==b):[...(f.badges||[]),b]})},b.charAt(0).toUpperCase()+b.slice(1));})
+        )),
+        el('div',{style:{display:'flex',gap:'18px'}},
+          el('label',{style:{display:'flex',alignItems:'center',gap:'7px',cursor:'pointer'}},el('div',{class:'tog'+(f.approved?' on':''),onClick:()=>sf({approved:!f.approved})}),el('span',{style:{fontSize:'12px',fontWeight:'600'}},'Approved')),
+          el('label',{style:{display:'flex',alignItems:'center',gap:'7px',cursor:'pointer'}},el('div',{class:'tog'+(f.active?' on':''),onClick:()=>sf({active:!f.active})}),el('span',{style:{fontSize:'12px',fontWeight:'600'}},'Active'))
+        )
+      ),
+      el('div',{style:{display:'flex',gap:'9px',padding:'12px 18px',borderTop:'1px solid var(--line)'}},
+        el('button',{class:'btn bo',style:{flex:1,justifyContent:'center'},onClick:()=>set({showAddHotel:false,editHotel:null})},'Cancel'),
+        el('button',{class:'btn ba',style:{flex:1,justifyContent:'center'},disabled:S.hFormSaving,onClick:saveHotel},S.hFormSaving?sp():ic('save',13),S.hFormSaving?'Saving...':'Save Hotel')
+      )
+    )
+  );
+}
+
+// ═══════════════════════ SHARE MODAL ═══════════════════════
+function renderShareModal(){
+  return el('div',{class:'ov',style:{alignItems:'center'},onClick:e=>e.target.classList.contains('ov')&&set({showShare:false})},
+    el('div',{style:{width:'100%',maxWidth:'400px',background:'var(--card)',borderRadius:'20px',padding:'22px',boxShadow:'var(--sh3)',border:'1px solid var(--line)'},class:'fi'},
+      el('h3',{style:{fontSize:'16px',color:'var(--ink)',marginBottom:'5px'}},'Share Hotel Admin Access'),
+      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)',marginBottom:'14px',lineHeight:'1.6'}},'Enter hotel owner Gmail. A unique panel link will be generated automatically.'),
+      S.shareErr?el('div',{style:{display:'flex',alignItems:'center',gap:'6px',padding:'8px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',marginBottom:'10px',fontSize:'12px',color:'#DC2626'}},ic('warn',12),S.shareErr):null,
+      lbl('Hotel Owner Gmail *'),
+      el('input',{class:'inp',type:'email',placeholder:'owner@gmail.com',value:S.shareEmail,style:{marginBottom:'12px'},onInput:e=>set({shareEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&shareAdmin()}),
+      S.generatedLink?el('div',{style:{marginBottom:'12px'}},
+        el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--good)',marginBottom:'5px'}},'✅ Link generated! Share with hotel owner:'),
+        el('div',{class:'link-box'},
+          el('span',{style:{flex:1}},S.generatedLink),
+          el('button',{style:{flexShrink:0,display:'flex',alignItems:'center',gap:'3px',padding:'5px 9px',background:'var(--accent)',color:'#fff',fontWeight:'700',fontSize:'11px',borderRadius:'6px'},onClick:()=>{navigator.clipboard.writeText(S.generatedLink);toast('Copied!');}},ic('copy',11),'Copy')
+        )
+      ):null,
+      el('div',{style:{display:'flex',gap:'8px'}},
+        el('button',{class:'btn bo',style:{flex:1,justifyContent:'center'},onClick:()=>set({showShare:false})},'Close'),
+        el('button',{class:'btn ba',style:{flex:1,justifyContent:'center'},disabled:S.shareSaving,onClick:shareAdmin},S.shareSaving?sp():ic('share',13),S.shareSaving?'Generating...':'Generate Link')
+      )
+    )
+  );
+}
+
+// ═══════════════════════ PAYMENT MODAL ═══════════════════════
+function renderPaymentModal(){
+  return el('div',{class:'ov',style:{alignItems:'center'},onClick:e=>e.target.classList.contains('ov')&&set({showPayment:false})},
+    el('div',{style:{width:'100%',maxWidth:'360px',background:'var(--card)',borderRadius:'20px',padding:'22px',boxShadow:'var(--sh3)',border:'1px solid var(--line)'},class:'fi'},
+      el('h3',{style:{fontSize:'16px',color:'var(--ink)',marginBottom:'5px'}},'Upgrade Plan'),
+      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)',marginBottom:'14px',lineHeight:'1.6'}},'Contact HotelRadar to activate your plan. We will confirm and activate within minutes.'),
+      el('div',{style:{display:'flex',flexDirection:'column',gap:'8px',marginBottom:'14px'}},
+        ...[{v:'monthly',p:'₹999/mo',l:'Monthly Plan',d:'Unlimited bookings',c:'var(--good)'},
+            {v:'perbooking',p:'₹49/booking',l:'Per Booking',d:'Pay only when you earn',c:'var(--blue)'}].map(o=>
+          el('div',{style:{padding:'12px',background:o.v==='monthly'?'var(--good-dim)':'var(--blue-dim)',border:'2px solid '+(S.payOpt===o.v?(o.v==='monthly'?'var(--good)':'var(--blue)'):'var(--line)'),borderRadius:'10px',cursor:'pointer'},onClick:()=>set({payOpt:o.v})},
+            el('div',{style:{display:'flex',justifyContent:'space-between',alignItems:'center'}},
+              el('div',{},el('p',{style:{fontWeight:'700',fontSize:'13px',color:'var(--ink)'}},o.l),el('p',{style:{fontSize:'11px',color:'var(--ink-soft)'}},o.d)),
+              el('p',{style:{fontSize:'17px',fontWeight:'700',color:o.c,fontFamily:'Fraunces,serif'}},o.p)
+            )
+          )
+        )
+      ),
+      el('a',{href:'https://wa.me/919876543210?text=Hi+HotelRadar%2C+I+want+to+activate+'+encodeURIComponent(S.payOpt==='monthly'?'Monthly Plan ₹999':'Per Booking Plan ₹49')+'+plan.',target:'_blank',style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'8px',width:'100%',padding:'11px',background:'#25D366',color:'#fff',fontWeight:'700',fontSize:'13px',borderRadius:'8px',textDecoration:'none',marginBottom:'7px'}},'💬 Contact on WhatsApp'),
+      el('button',{class:'btn bo',style:{width:'100%',justifyContent:'center'},onClick:()=>set({showPayment:false})},'Close')
+    )
+  );
+}
+
+// ═══════════════════════ CONFIRM DELETE ═══════════════════════
+function renderConfirm(){
+  const titles={hotel:'Delete Hotel?',review:'Remove Review?',booking:'Remove Booking?'};
+  return el('div',{class:'ov',style:{alignItems:'center'},onClick:e=>e.target.classList.contains('ov')&&set({deleteId:null,deleteType:''})},
+    el('div',{style:{width:'100%',maxWidth:'310px',background:'var(--card)',borderRadius:'18px',padding:'22px',textAlign:'center',boxShadow:'var(--sh3)',border:'1px solid var(--line)'},class:'fi'},
+      el('div',{style:{width:'44px',height:'44px',borderRadius:'50%',background:'#FEF2F2',display:'flex',alignItems:'center',justifyContent:'center',margin:'0 auto 12px',color:'#EF4444'}},ic('trash',20)),
+      el('h3',{style:{fontSize:'15px',color:'var(--ink)',marginBottom:'5px'}},titles[S.deleteType]||'Delete?'),
+      el('p',{style:{fontSize:'12px',color:'var(--ink-soft)',marginBottom:'18px'}},'This cannot be undone.'),
+      el('div',{style:{display:'flex',gap:'8px'}},
+        el('button',{class:'btn bo',style:{flex:1,justifyContent:'center'},onClick:()=>set({deleteId:null,deleteType:''})},'Cancel'),
+        el('button',{class:'btn br',style:{flex:1,justifyContent:'center'},onClick:async()=>{
+          if(S.deleteType==='hotel')await delHotel(S.deleteId);
+          else if(S.deleteType==='review')await delReview(S.deleteId);
+          else if(S.deleteType==='booking')await delBooking(S.deleteId);
+        }},ic('trash',13),'Delete')
+      )
+    )
+  );
+}
+
+// ═══════════════════════ TOAST ═══════════════════════
+function renderToast(){
+  if(!S.toast)return null;
+  const d=document.createElement('div');
+  d.style.cssText=`position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:${S.toast.t==='error'?'#EF4444':'#1F7A4D'};color:#fff;padding:9px 18px;border-radius:999px;font-size:12px;font-weight:700;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.2);white-space:nowrap`;
+  d.textContent=S.toast.msg;return d;
+}
+
+// ═══════════════════════ MAIN RENDER ═══════════════════════
+function render(){
+  const app=document.getElementById('app');
+  app.innerHTML='';
+  if(!S.authReady){const d=document.createElement('div');d.style.cssText='min-height:100vh;display:flex;align-items:center;justify-content:center;';d.appendChild(sp2());app.appendChild(d);return;}
+  if(!S.isAuth){app.appendChild(renderLogin());if(S.toast)app.appendChild(renderToast());return;}
+
+  if(IS_HOTEL_MODE){
+    // SMALL HOTEL PANEL
+    app.appendChild(renderTopbar());
+    app.appendChild(el('div',{class:'tab-row'},
+      ...[{id:'dashboard',l:'📊 Dashboard'},{id:'hotel',l:'🏨 My Hotel'},{id:'bookings',l:'📅 Bookings'},{id:'reviews',l:'⭐ Reviews'},{id:'plan',l:'💳 My Plan'},{id:'settings',l:'⚙️ Settings'}]
+        .map(t=>el('div',{class:'tbtn'+(S.tab===t.id?' on':''),onClick:()=>set({tab:t.id})},t.l))
+    ));
+    if(S.tab==='dashboard')app.appendChild(renderDashboardH());
+    else if(S.tab==='hotel')app.appendChild(renderHotelH());
+    else if(S.tab==='bookings')app.appendChild(renderBookingsH());
+    else if(S.tab==='reviews')app.appendChild(renderReviewsH());
+    else if(S.tab==='plan')app.appendChild(renderPlanH());
+    else if(S.tab==='settings')app.appendChild(renderSettingsH());
+  } else {
+    // SUPER ADMIN PANEL
+    app.appendChild(el('div',{style:{display:'flex'}},
+      renderSidebar(),
+      el('div',{class:'main'},
+        renderTopbar(),
+        S.tab==='dashboard'?renderDashboardS():
+        S.tab==='hotels'?renderHotelsS():
+        S.tab==='payments'?renderPaymentsS():
+        S.tab==='admins'?renderAdminsS():
+        S.tab==='share'?renderShareS():
+        S.tab==='analytics'?renderAnalyticsS():
+        S.tab==='bookings'?renderBookingsS():
+        S.tab==='activity'?renderActivityS():
+        el('div',{class:'content'},'')
+      )
+    ));
+  }
+  // Modals
+  if(S.showAddHotel||S.editHotel)app.appendChild(renderHotelForm());
+  if(S.showShare)app.appendChild(renderShareModal());
+  if(S.showPayment)app.appendChild(renderPaymentModal());
+  if(S.deleteId)app.appendChild(renderConfirm());
+  if(S.toast)app.appendChild(renderToast());
+}
+
+window.addEventListener('load',()=>{render();initFB();});
+</script>
+</body>
+</html>
