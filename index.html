@@ -147,6 +147,34 @@ textarea.inp{resize:vertical;}
 /* Color picker input */
 input[type=color]{padding:2px;height:36px;border-radius:6px;cursor:pointer;}
 
+/* Welcome animation */
+@keyframes welcomeIn{
+  0%{opacity:0;transform:scale(.85);}
+  60%{opacity:1;transform:scale(1.04);}
+  100%{opacity:1;transform:scale(1);}
+}
+@keyframes welcomeOut{
+  0%{opacity:1;}
+  100%{opacity:0;pointer-events:none;}
+}
+.welcome-overlay{
+  position:fixed;inset:0;z-index:999;
+  background:linear-gradient(135deg,#1a1a2e 0%,#E8631C 100%);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  animation:welcomeIn .5s ease-out forwards;
+}
+.welcome-overlay.out{animation:welcomeOut .5s ease-in forwards;}
+@keyframes float{0%,100%{transform:translateY(0);}50%{transform:translateY(-10px);}}
+.welcome-emoji{font-size:72px;animation:float 2s ease-in-out infinite;}
+@keyframes shimmer2{0%{opacity:.6;}50%{opacity:1;}100%{opacity:.6;}}
+.welcome-dots span{
+  display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:rgba(255,255,255,.6);margin:0 3px;
+  animation:shimmer2 1.2s ease-in-out infinite;
+}
+.welcome-dots span:nth-child(2){animation-delay:.2s;}
+.welcome-dots span:nth-child(3){animation-delay:.4s;}
+
 /* Section card */
 .sec-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);padding:16px;margin-bottom:12px;}
 </style>
@@ -175,6 +203,8 @@ let S={
   // hotel admin data
   myAdmin:null,myHotel:null,myBookings:[],myReviews:[],
   loading:true,
+  selectedRoom:null,
+  showWelcome:false,
   // forms
   showHotelForm:false,editHotel:null,
   hf:eH(),hfErr:'',hfSaving:false,amenityInput:'',
@@ -232,7 +262,8 @@ function initFB(){
       const snap=await db.ref(`sharedAdmins/${key}`).get();
       if(!snap.exists()){await firebase.auth().signOut();set({authReady:true,isAuth:false,lErr:'Access not granted. Contact HotelRadar admin.'});return;}
       const ad=snap.val();
-      set({authReady:true,isAuth:true,user:u,myAdmin:{...ad,key}});
+      set({authReady:true,isAuth:true,user:u,myAdmin:{...ad,key},showWelcome:true});
+      setTimeout(()=>set({showWelcome:false}),3200);
       loadHotelData(email,key,ad);
     } else {
       if(u.email!==SUPER_EMAIL){await firebase.auth().signOut();set({authReady:true,isAuth:false,lErr:'Access denied. Only Super Admin can login here.'});return;}
@@ -637,8 +668,8 @@ function renderHotelsS(){
       el('div',{style:{position:'relative',flex:1,minWidth:'160px'}},
         el('input',{class:'inp',placeholder:'Search hotels...',value:S.hotelSearch||'',onInput:e=>{S.hotelSearch=e.target.value;clearTimeout(window._hs);window._hs=setTimeout(()=>render(),300);}})),
       el('select',{class:'inp',style:{width:'auto'},onChange:e=>set({hotelFilter:e.target.value})},
-        ...['all','approved','pending','inactive'].map(v=>el('option',{value:v,...(S.hotelFilter===v?{selected:true}:{})},v.charAt(0).toUpperCase()+v.slice(1)))),
-      el('button',{class:'btn ba',onClick:()=>set({showHotelForm:true,editHotel:null,hf:eH(),hfErr:'',amenityInput:''})},ic('plus',13),'Add Hotel')
+        ...['all','approved','pending','inactive'].map(v=>el('option',{value:v,...(S.hotelFilter===v?{selected:true}:{})},v.charAt(0).toUpperCase()+v.slice(1))))
+      // Hotel owners add hotels from their own Small Admin Panel
     ),
     el('div',{style:{overflowX:'auto'}},
       el('table',{class:'tbl'},
@@ -968,11 +999,46 @@ function getMyPlan(){
   return{st:a.plan==='paid'?'paid':'free',label:a.plan==='paid'?'Paid Plan':'Free Trial',days};
 }
 
+// ── DEMO HOTEL (shown when no hotel added yet, website pe show nahi hoga) ──
+const DEMO_HOTEL = {
+  id:'demo_preview',
+  name:'Your Hotel Name Here',
+  city:'Your City',
+  state:'Your State',
+  area:'Your Area / Locality',
+  phone:'+91 XXXXX XXXXX',
+  price:2500,
+  rating:4.5,
+  reviewCount:0,
+  type:'hotel',
+  plan:'basic',
+  emoji:'🏨',
+  gradient:'linear-gradient(135deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%)',
+  desc:'Write your hotel description here. Tell guests about your location, specialities, what makes your hotel unique, nearby attractions, and why they should stay with you.',
+  amenities:['AC','WiFi','Restaurant','Parking','Hot Water','TV'],
+  badges:[],
+  checkIn:'12:00 PM',
+  checkOut:'11:00 AM',
+  approved:false,
+  active:false,
+  isDemo:true,
+};
+
+// Room categories for preview
+function getDemoRooms(basePrice){
+  return [
+    {id:'cat1',label:'Category 1',emoji:'🛏️',tag:'Best Value',tagColor:'good',mult:1,maxGuests:2,bedType:'Double Bed',size:'180 sq ft',features:['AC','TV','WiFi','Hot Water','Daily Housekeeping']},
+    {id:'cat2',label:'Category 2',emoji:'✨',tag:'Most Popular',tagColor:'accent',mult:1.5,maxGuests:2,bedType:'King Bed',size:'240 sq ft',features:['AC','Smart TV','WiFi','Mini Fridge','City View','Room Service']},
+    {id:'cat3',label:'Category 3',emoji:'🌟',tag:'Premium',tagColor:'accent',mult:2,maxGuests:3,bedType:'Super King',size:'300 sq ft',features:['AC','Smart TV','WiFi','Mini Bar','Balcony','Bathtub','24/7 Service']},
+  ];
+}
+
 function renderDashH(){
   const h=S.myHotel,bk=S.myBookings,rv=S.myReviews;
   const plan=getMyPlan();
   const avgR=rv.length?(rv.reduce((s,r)=>s+Number(r.rating||0),0)/rv.length).toFixed(1):'—';
   return el('div',{class:'content fi'},
+    // Plan banner
     el('div',{class:'pl-ban '+(plan.st==='expired'?'pl-exp':plan.st==='paid'?'pl-paid':'pl-free')},
       el('div',{},
         el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},(plan.st==='free'?'🎉 Free Trial Active':plan.st==='paid'?'✅ Paid Plan Active':'⚠️ Plan Expired')),
@@ -980,37 +1046,40 @@ function renderDashH(){
       ),
       plan.st==='expired'?el('button',{style:{padding:'7px 14px',background:'#EF4444',color:'#fff',fontWeight:'700',fontSize:'12px',borderRadius:'8px',cursor:'pointer'},onClick:()=>set({showPayment:true})},'Renew Now'):null
     ),
+    // Stats
     el('div',{class:'g3',style:{marginBottom:'14px'}},
       el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'👁'),el('div',{class:'sval',style:{color:'var(--blue)'}},h?.reviewCount||0),el('div',{class:'slbl'},'Profile Views')),
       el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'📅'),el('div',{class:'sval',style:{color:'var(--ac)'}},bk.length),el('div',{class:'slbl'},'Bookings')),
       el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'✅'),el('div',{class:'sval',style:{color:'var(--good)'}},bk.filter(b=>b.status==='confirmed').length),el('div',{class:'slbl'},'Confirmed')),
       el('div',{class:'card scard'},el('div',{style:{fontSize:'22px'}},'⭐'),el('div',{class:'sval',style:{color:'#F59E0B'}},avgR),el('div',{class:'slbl'},'Avg Rating'))
     ),
+    // Hotel quick card or add prompt
     h?el('div',{class:'card',style:{padding:'14px',marginBottom:'12px'}},
       el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}},
-        el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Hotel Overview'),
-        el('button',{style:{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'var(--acd)',color:'var(--aci)',fontWeight:'700',fontSize:'11px',borderRadius:'6px',cursor:'pointer'},onClick:()=>set({tab:'hotel'})},ic('edit',12),'Edit')
+        el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Your Hotel'),
+        el('button',{style:{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'var(--acd)',color:'var(--aci)',fontWeight:'700',fontSize:'11px',borderRadius:'6px',cursor:'pointer'},onClick:()=>set({tab:'hotel'})},ic('edit',12),'Edit & Manage')
       ),
       el('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}},
-        ...[['📍',`${h.area||''}, ${h.city}`],['📞',h.phone||'—'],['💰','₹'+Number(h.price||0).toLocaleString('en-IN')+'/night'],['🏷️',h.approved?'✅ Live':'⏳ Pending']].map(([e,v])=>
+        ...[['📍',`${h.area||''}, ${h.city}`],['📞',h.phone||'—'],['💰','₹'+Number(h.price||0).toLocaleString('en-IN')+'/night'],['🏷️',h.approved?'✅ Live on HotelRadar':'⏳ Pending Approval']].map(([e,v])=>
           el('div',{style:{background:'var(--pd)',borderRadius:'8px',padding:'8px'}},
             el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'2px'}},e),
             el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},v)
           )
         )
       )
-    ):el('div',{class:'card',style:{padding:'28px',textAlign:'center',marginBottom:'12px'}},
+    ):el('div',{class:'card',style:{padding:'20px',marginBottom:'12px',border:'2px dashed var(--line)',background:'var(--pd)',textAlign:'center'}},
       el('p',{style:{fontSize:'28px',marginBottom:'8px'}},'🏨'),
-      el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'Add Your Hotel Profile'),
-      el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginBottom:'14px'}},'Fill in your details to get listed on HotelRadar.'),
-      el('button',{class:'btn ba',onClick:()=>set({tab:'hotel',showHotelForm:true,hf:eH(),hfErr:''})},ic('plus',13),'Add Hotel Profile')
+      el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'No Hotel Added Yet'),
+      el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginBottom:'14px'}},'Go to "My Hotel" tab to add your hotel listing.'),
+      el('button',{class:'btn ba',onClick:()=>set({tab:'hotel'})},ic('plus',13),'Add Hotel Now')
     ),
+    // Recent bookings
     el('div',{class:'card',style:{overflow:'hidden'}},
       el('div',{style:{padding:'10px 14px',borderBottom:'1px solid var(--line)',display:'flex',alignItems:'center',justifyContent:'space-between'}},
         el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Recent Bookings'),
         el('button',{style:{fontSize:'11px',fontWeight:'700',color:'var(--ac)',cursor:'pointer'},onClick:()=>set({tab:'bookings'})},'View All →')
       ),
-      bk.length===0?el('p',{style:{padding:'20px',textAlign:'center',color:'var(--ink-f)',fontSize:'12px'}},'No bookings yet'):
+      bk.length===0?el('p',{style:{padding:'20px',textAlign:'center',color:'var(--ink-f)',fontSize:'12px'}},'No bookings yet. They will appear here once customers book.'):
       el('div',{},bk.slice().reverse().slice(0,3).map(b=>
         el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'9px 14px',borderBottom:'1px solid var(--line)'}},
           el('div',{},el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--ink)'}},b.name||'Guest'),el('p',{style:{fontSize:'10px',color:'var(--ink-s)',marginTop:'1px'}},fmt(b.checkIn))),
@@ -1021,39 +1090,164 @@ function renderDashH(){
   );
 }
 
+// ── HOTEL PAGE — Website jaise UI ──
 function renderHotelH(){
-  const h=S.myHotel;
-  return el('div',{class:'content fi'},
-    el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'14px'}},
-      el('h2',{style:{fontSize:'17px',color:'var(--ink)'}},'My Hotel Profile'),
-      el('button',{class:'btn ba',onClick:()=>set({showHotelForm:true,editHotel:h,hf:h?{...h,price:String(h.price||''),rating:String(h.rating||'4.5'),reviewCount:String(h.reviewCount||0)}:eH(),hfErr:'',amenityInput:''})},ic('edit',13),h?'Edit Profile':'Add Profile')
-    ),
-    !h?el('div',{class:'card',style:{padding:'40px',textAlign:'center'}},
-      el('p',{style:{fontSize:'36px',marginBottom:'12px'}},'🏨'),
-      el('p',{style:{fontSize:'14px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'No Hotel Profile Yet'),
-      el('p',{style:{fontSize:'12px',color:'var(--ink-s)',marginBottom:'14px',lineHeight:'1.6'}},'Add your hotel details. After admin approval, your hotel will appear in search results.'),
-      el('button',{class:'btn ba',onClick:()=>set({showHotelForm:true,hf:eH(),hfErr:''})},ic('plus',13),'Add Hotel Profile')
-    ):el('div',{style:{display:'flex',flexDirection:'column',gap:'12px'}},
-      el('div',{class:'card',style:{overflow:'hidden'}},
-        el('div',{style:{height:'90px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'40px',background:h.gradient||'var(--ac)'}},h.emoji||'🏨'),
-        el('div',{style:{padding:'14px'}},
-          el('div',{style:{display:'flex',justifyContent:'space-between',gap:'8px',marginBottom:'8px'}},
-            el('div',{},el('h3',{style:{fontSize:'15px',color:'var(--ink)'}},h.name),el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginTop:'2px'}},`${h.area||''}, ${h.city}, ${h.state}`)),
-            el('div',{style:{textAlign:'right'}},el('p',{style:{fontSize:'15px',fontWeight:'700',color:'var(--ink)'}},'₹'+Number(h.price||0).toLocaleString('en-IN')),el('p',{style:{fontSize:'10px',color:'var(--ink-f)'}},'per night'))
-          ),
-          h.desc&&el('p',{style:{fontSize:'11px',color:'var(--ink-s)',lineHeight:'1.6',marginBottom:'8px'}},h.desc),
-          el('div',{style:{display:'flex',flexWrap:'wrap',gap:'5px'}},
-            ...(h.amenities||[]).slice(0,6).map(a=>el('span',{class:'b b-x'},a)),
-            h.amenities?.length>6&&el('span',{class:'b b-x'},'+'+( h.amenities.length-6)+' more')
-          )
-        )
+  const h=S.myHotel||DEMO_HOTEL;
+  const isDemo=!S.myHotel;
+  const rooms=getDemoRooms(h.price||2500);
+  const selRoom=S.selectedRoom;
+
+  const wrap=el('div',{style:{paddingBottom:'16px'}});
+
+  // Demo notice banner
+  if(isDemo){
+    wrap.appendChild(el('div',{style:{background:'linear-gradient(135deg,var(--ac),#f59e0b)',color:'#fff',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:'10px'}},
+      el('div',{},
+        el('p',{style:{fontSize:'13px',fontWeight:'700'}},'👋 This is a Preview'),
+        el('p',{style:{fontSize:'11px',opacity:'.9',marginTop:'2px'}},'Add your hotel details — this is how it will look on HotelRadar')
       ),
-      el('div',{class:'card',style:{padding:'12px 14px',display:'flex',alignItems:'center',justifyContent:'space-between'}},
-        el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},'Listing Status'),
-        el('span',{class:'b '+(h.approved?'b-g':'b-a')},h.approved?'✅ Live':'⏳ Pending Approval')
-      )
+      el('button',{style:{flexShrink:0,padding:'7px 14px',background:'rgba(255,255,255,.25)',border:'1px solid rgba(255,255,255,.4)',borderRadius:'8px',color:'#fff',fontWeight:'700',fontSize:'12px',cursor:'pointer'},
+        onClick:()=>set({showHotelForm:true,editHotel:null,hf:eH(),hfErr:'',amenityInput:''})},
+        '+ Add Hotel')
+    ));
+  }
+
+  // Hotel image / gradient card
+  const imgCard=el('div',{style:{height:'200px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'64px',background:h.gradient,position:'relative',overflow:'hidden'}},
+    el('span',{},h.emoji||'🏨')
+  );
+
+  // Edit / Add button overlay
+  const editBtn=el('button',{
+    style:{position:'absolute',bottom:'12px',right:'12px',display:'flex',alignItems:'center',gap:'6px',padding:'8px 14px',background:'rgba(255,255,255,.9)',backdropFilter:'blur(8px)',borderRadius:'999px',fontWeight:'700',fontSize:'12px',color:'var(--ink)',cursor:'pointer',border:'none',boxShadow:'0 2px 8px rgba(0,0,0,.2)'},
+    onClick:()=>set({showHotelForm:true,editHotel:isDemo?null:h,hf:isDemo?eH():{...h,price:String(h.price||''),rating:String(h.rating||'4.5'),reviewCount:String(h.reviewCount||0)},hfErr:'',amenityInput:''})
+  },ic('edit',13),isDemo?'Add Hotel':'Edit Hotel');
+  imgCard.style.position='relative';
+  imgCard.appendChild(editBtn);
+  wrap.appendChild(imgCard);
+
+  // ── ROOM CATEGORIES STRIP (below image, exactly like website) ──
+  const roomStrip=el('div',{style:{padding:'14px 16px 0'}},
+    el('p',{style:{fontSize:'10px',fontWeight:'900',textTransform:'uppercase',letterSpacing:'.08em',color:'var(--ink-f)',marginBottom:'10px'}},'🛏 Room Categories'),
+    el('div',{style:{display:'flex',gap:'10px',overflowX:'auto',paddingBottom:'4px'}},
+      ...rooms.map(room=>{
+        const isActive=selRoom===room.id;
+        const price=Math.round(h.price*room.mult);
+        const btn=el('button',{
+          style:{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',padding:'10px 14px',borderRadius:'12px',border:'2px solid '+(isActive?'var(--ac)':'var(--line)'),background:isActive?'var(--ac)':'var(--card)',cursor:'pointer',transition:'all .15s',minWidth:'90px'},
+          onClick:()=>set({selectedRoom:isActive?null:room.id})
+        },
+          el('span',{style:{fontSize:'22px',marginBottom:'4px'}},room.emoji),
+          el('span',{style:{fontSize:'11px',fontWeight:'700',color:isActive?'#fff':'var(--ink)',whiteSpace:'nowrap'}},room.label),
+          el('span',{style:{fontSize:'10px',color:isActive?'rgba(255,255,255,.8)':'var(--ink-f)',marginTop:'2px'}},'₹'+price.toLocaleString('en-IN')+'/night'),
+          el('span',{style:{marginTop:'4px',fontSize:'8px',fontWeight:'800',textTransform:'uppercase',padding:'2px 6px',borderRadius:'999px',background:isActive?'rgba(255,255,255,.25)':(room.tagColor==='accent'?'var(--acd)':'var(--gd)'),color:isActive?'#fff':(room.tagColor==='accent'?'var(--aci)':'var(--good)')}},room.tag)
+        );
+        return btn;
+      })
     )
   );
+  wrap.appendChild(roomStrip);
+
+  // Room detail panel
+  if(selRoom){
+    const room=rooms.find(r=>r.id===selRoom);
+    if(room){
+      const price=Math.round(h.price*room.mult);
+      const panel=el('div',{style:{margin:'10px 16px 0',background:'var(--card)',border:'2px solid var(--ac)',borderRadius:'14px',overflow:'hidden'}});
+      // Header
+      panel.appendChild(el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 14px',background:'var(--acd)',borderBottom:'1px solid rgba(232,99,28,.15)'}},
+        el('div',{style:{display:'flex',alignItems:'center',gap:'10px'}},
+          el('span',{style:{fontSize:'24px'}},room.emoji),
+          el('div',{},
+            el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},room.label),
+            el('div',{style:{display:'flex',gap:'10px',marginTop:'2px'}},
+              el('span',{style:{fontSize:'10px',color:'var(--ink-s)'}},room.bedType),
+              el('span',{style:{fontSize:'10px',color:'var(--ink-s)'}},room.size),
+              el('span',{style:{fontSize:'10px',color:'var(--ink-s)'}},'Max '+room.maxGuests+' guests')
+            )
+          )
+        ),
+        el('div',{style:{textAlign:'right'}},
+          el('p',{style:{fontSize:'16px',fontWeight:'700',color:'var(--ink)'}},'₹'+price.toLocaleString('en-IN')),
+          el('p',{style:{fontSize:'9px',color:'var(--ink-f)'}},'per night')
+        )
+      ));
+      // Features
+      const featGrid=el('div',{style:{padding:'12px 14px'}},
+        el('p',{style:{fontSize:'9px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'.06em',color:'var(--ink-f)',marginBottom:'8px'}},'What\'s Included'),
+        el('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px'}},
+          ...room.features.map(f=>el('div',{style:{display:'flex',alignItems:'center',gap:'6px',fontSize:'11px',color:'var(--ink-s)'}},
+            el('div',{style:{width:'14px',height:'14px',borderRadius:'50%',background:'var(--gd)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}},
+              el('span',{style:{fontSize:'9px',color:'var(--good)'}},'✓')
+            ),
+            f
+          ))
+        )
+      );
+      panel.appendChild(featGrid);
+      // Edit note
+      panel.appendChild(el('div',{style:{padding:'0 14px 12px'}},
+        el('p',{style:{fontSize:'10px',color:'var(--ink-f)',background:'var(--pd)',padding:'8px 10px',borderRadius:'8px',lineHeight:'1.6'}},'💡 Room categories auto-generate based on your base price. Edit your hotel to update pricing.')
+      ));
+      wrap.appendChild(panel);
+    }
+  }
+
+  // Hotel info section
+  const info=el('div',{style:{padding:'14px 16px 0'}});
+
+  // Status badge
+  if(!isDemo){
+    info.appendChild(el('div',{style:{marginBottom:'10px'}},
+      el('span',{class:'b '+(h.approved?'b-g':'b-a'),style:{fontSize:'11px'}},h.approved?'✅ Live on HotelRadar':'⏳ Pending Admin Approval')
+    ));
+  }
+
+  // Name + location
+  info.appendChild(el('h2',{style:{fontSize:'20px',fontFamily:'Fraunces,serif',color:'var(--ink)',marginBottom:'4px'}},h.name));
+  info.appendChild(el('p',{style:{fontSize:'12px',color:'var(--ink-s)',marginBottom:'12px'}},`${h.area||''}, ${h.city}${h.state?', '+h.state:''}`));
+
+  // Price + check-in/out
+  info.appendChild(el('div',{class:'card',style:{padding:'14px',marginBottom:'12px'}},
+    el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}},
+      el('div',{},
+        el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',textTransform:'uppercase',letterSpacing:'.06em'}},'Starting Direct Rate'),
+        el('p',{style:{fontSize:'22px',fontWeight:'700',color:'var(--ink)',fontFamily:'Fraunces,serif'}},'₹'+Number(h.price||0).toLocaleString('en-IN')+'  ',el('span',{style:{fontSize:'12px',fontWeight:'400',color:'var(--ink-s)'}},' /night'))
+      ),
+      el('span',{class:'b b-g',style:{fontSize:'11px',padding:'5px 10px'}},'Zero Commission')
+    ),
+    el('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}},
+      el('div',{style:{background:'var(--pd)',borderRadius:'8px',padding:'8px'}},el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'2px'}},'CHECK-IN'),el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},h.checkIn||'12:00 PM')),
+      el('div',{style:{background:'var(--pd)',borderRadius:'8px',padding:'8px'}},el('p',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'2px'}},'CHECK-OUT'),el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},h.checkOut||'11:00 AM'))
+    )
+  ));
+
+  // Description
+  if(h.desc){
+    info.appendChild(el('div',{class:'card',style:{padding:'14px',marginBottom:'12px'}},
+      el('p',{style:{fontSize:'12px',color:'var(--ink-s)',lineHeight:'1.7'}},h.desc)
+    ));
+  }
+
+  // Amenities
+  if(h.amenities?.length){
+    info.appendChild(el('div',{class:'card',style:{padding:'14px',marginBottom:'12px'}},
+      el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',textTransform:'uppercase',letterSpacing:'.06em',marginBottom:'10px'}},'Featured Amenities'),
+      el('div',{style:{display:'flex',flexWrap:'wrap',gap:'7px'}},
+        ...h.amenities.map(a=>el('span',{style:{padding:'5px 10px',background:'var(--pd)',border:'1px solid var(--line)',borderRadius:'999px',fontSize:'11px',fontWeight:'600',color:'var(--ink-s)'}},a))
+      )
+    ));
+  }
+
+  // Edit hotel button
+  info.appendChild(el('button',{
+    class:'btn ba',
+    style:{width:'100%',justifyContent:'center',padding:'13px',fontSize:'14px'},
+    onClick:()=>set({showHotelForm:true,editHotel:isDemo?null:h,hf:isDemo?eH():{...h,price:String(h.price||''),rating:String(h.rating||'4.5'),reviewCount:String(h.reviewCount||0)},hfErr:'',amenityInput:''})
+  },ic(isDemo?'plus':'edit',15),isDemo?'Add Your Hotel Details':'Edit Hotel Details'));
+
+  wrap.appendChild(info);
+  return wrap;
 }
 
 function renderBookingsH(){
@@ -1313,6 +1507,31 @@ function renderToast(){
 }
 
 // ══════════════════════════════════════════
+// WELCOME ANIMATION
+// ══════════════════════════════════════════
+function renderWelcome(){
+  const name=S.user?.displayName?.split(' ')[0]||'Hotel Owner';
+  const div=el('div',{class:'welcome-overlay'},
+    el('div',{class:'welcome-emoji'},'🏨'),
+    el('div',{style:{textAlign:'center'}},
+      el('h1',{style:{color:'#fff',fontSize:'26px',fontFamily:'Fraunces,serif',marginBottom:'6px'}},'Welcome, '+name+'!'),
+      el('p',{style:{color:'rgba(255,255,255,.8)',fontSize:'13px',marginBottom:'20px'}},'Your Hotel Admin Panel is ready')
+    ),
+    el('div',{style:{display:'flex',alignItems:'center',gap:'8px',color:'rgba(255,255,255,.7)',fontSize:'12px'}},
+      el('div',{class:'welcome-dots'},
+        el('span'),el('span'),el('span')
+      ),
+      'Loading your dashboard...'
+    )
+  );
+  // Auto fade out
+  setTimeout(()=>{
+    div.classList.add('out');
+  },2600);
+  return div;
+}
+
+// ══════════════════════════════════════════
 // MAIN RENDER
 // ══════════════════════════════════════════
 function render(){
@@ -1323,6 +1542,11 @@ function render(){
 
   if(IS_HOTEL){
     // ── HOTEL OWNER PANEL ──
+    // Welcome animation (first login)
+    if(S.showWelcome){
+      app.appendChild(renderWelcome());
+      return;
+    }
     app.appendChild(renderMobTop());
     // tab content
     const content=
