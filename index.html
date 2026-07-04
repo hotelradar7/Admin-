@@ -203,7 +203,16 @@ let S={
   hotelSearch:'',hotelFilter:'all',
 };
 function eH(){return{name:'',city:'',state:'',area:'',pin:'',phone:'',type:'hotel',price:'',rating:'4.5',reviewCount:'0',checkIn:'12:00 PM',checkOut:'11:00 AM',plan:'basic',emoji:'🏨',gradient:'linear-gradient(135deg,#E8631C,#F2A65A)',desc:'',amenities:[],badges:[],approved:false,active:true};}
-function set(p){S={...S,...p};render();}
+// Input-only keys that should NOT trigger full re-render
+const INPUT_KEYS=['lEmail','lPass','lShowPass','shareEmail','hotelSearch','amenityInput'];
+function set(p,skipRender){
+  S={...S,...p};
+  if(skipRender)return;
+  const keys=Object.keys(p);
+  const onlyInputKeys=keys.every(k=>INPUT_KEYS.includes(k));
+  if(!onlyInputKeys)render();
+}
+function setInput(p){S={...S,...p};} // update state only, no render
 function sh(p){set({hf:{...S.hf,...p}});}
 function ss(p){set({siteSettings:{...S.siteSettings,...p}});}
 
@@ -424,10 +433,10 @@ function renderLogin(){
         el('div',{style:{flex:1,height:'1px',background:'var(--line)'}})
       ),
       el('div',{style:{display:'flex',flexDirection:'column',gap:'9px'}},
-        el('input',{class:'inp',type:'email',placeholder:'Email address',value:S.lEmail,onInput:e=>set({lEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&doLogin()}),
+        el('input',{class:'inp',type:'email',placeholder:'Email address',value:S.lEmail,onInput:e=>setInput({lEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&doLogin()}),
         el('div',{style:{position:'relative'}},
-          el('input',{class:'inp',type:S.lShowPass?'text':'password',placeholder:'Password',style:{paddingRight:'40px'},value:S.lPass,onInput:e=>set({lPass:e.target.value}),onKeydown:e=>e.key==='Enter'&&doLogin()}),
-          el('button',{onClick:()=>set({lShowPass:!S.lShowPass}),style:{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',color:'var(--ink-f)'}},ic(S.lShowPass?'eyeoff':'eye',14))
+          el('input',{class:'inp',type:S.lShowPass?'text':'password',placeholder:'Password',style:{paddingRight:'40px'},value:S.lPass,onInput:e=>setInput({lPass:e.target.value}),onKeydown:e=>e.key==='Enter'&&doLogin()}),
+          el('button',{onClick:()=>{S.lShowPass=!S.lShowPass;render();},style:{position:'absolute',right:'10px',top:'50%',transform:'translateY(-50%)',color:'var(--ink-f)'}},ic(S.lShowPass?'eyeoff':'eye',14))
         ),
         el('button',{class:'btn ba btn-w',disabled:S.lLoading,onClick:doLogin},S.lLoading?sp():null,S.lLoading?'Signing in...':'Sign In')
       )
@@ -626,7 +635,7 @@ function renderHotelsS(){
   return el('div',{class:'content fi'},
     el('div',{style:{display:'flex',gap:'10px',marginBottom:'14px',flexWrap:'wrap'}},
       el('div',{style:{position:'relative',flex:1,minWidth:'160px'}},
-        el('input',{class:'inp',placeholder:'Search hotels...',value:S.hotelSearch||'',onInput:e=>set({hotelSearch:e.target.value})})),
+        el('input',{class:'inp',placeholder:'Search hotels...',value:S.hotelSearch||'',onInput:e=>{S.hotelSearch=e.target.value;clearTimeout(window._hs);window._hs=setTimeout(()=>render(),300);}})),
       el('select',{class:'inp',style:{width:'auto'},onChange:e=>set({hotelFilter:e.target.value})},
         ...['all','approved','pending','inactive'].map(v=>el('option',{value:v,...(S.hotelFilter===v?{selected:true}:{})},v.charAt(0).toUpperCase()+v.slice(1)))),
       el('button',{class:'btn ba',onClick:()=>set({showHotelForm:true,editHotel:null,hf:eH(),hfErr:'',amenityInput:''})},ic('plus',13),'Add Hotel')
@@ -749,7 +758,7 @@ function renderShareS(){
         el('p',{style:{fontSize:'12px',color:'var(--ink-s)',lineHeight:'1.6',marginBottom:'14px'}},'Enter hotel owner Gmail → Unique link generated automatically → Share link with owner → They login with Google → See their own Hotel Admin Panel.'),
         S.shareErr?el('div',{style:{display:'flex',alignItems:'center',gap:'6px',padding:'8px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',marginBottom:'10px',fontSize:'12px',color:'#DC2626'}},ic('warn',12),S.shareErr):null,
         lbl('Hotel Owner Gmail *'),
-        el('input',{class:'inp',type:'email',placeholder:'owner@gmail.com',value:S.shareEmail,style:{marginBottom:'12px'},onInput:e=>set({shareEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&shareAdmin()}),
+        el('input',{class:'inp',type:'email',placeholder:'owner@gmail.com',value:S.shareEmail,style:{marginBottom:'12px'},onInput:e=>setInput({shareEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&shareAdmin()}),
         el('button',{class:'btn ba btn-w',disabled:S.shareSaving,onClick:shareAdmin},S.shareSaving?sp():ic('share',13),S.shareSaving?'Generating...':'Generate Link & Share Access'),
         S.genLink?el('div',{style:{marginTop:'14px'}},
           el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--good)',marginBottom:'6px'}},'✅ Link ready! Share with hotel owner:'),
@@ -863,24 +872,24 @@ function renderWebsiteS(){
     // Hero Section
     el('div',{class:'sec-card'},
       el('h3',{style:{fontSize:'14px',color:'var(--ink)',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}},ic('paint',15),' Hero Section'),
-      row('Hero Title (Main Heading)',el('input',{class:'inp',value:cfg.heroTitle,onInput:e=>ss({heroTitle:e.target.value})})),
-      row('Hero Subtitle',el('textarea',{class:'inp',rows:'2',onInput:e=>ss({heroSubtitle:e.target.value})},cfg.heroSubtitle)),
-      row('Hero Background Gradient (CSS)',el('input',{class:'inp',value:cfg.heroGradient,onInput:e=>ss({heroGradient:e.target.value})})),
+      row('Hero Title (Main Heading)',el('input',{class:'inp',value:cfg.heroTitle,onInput:e=>{S.siteSettings.heroTitle=e.target.value;}})),
+      row('Hero Subtitle',el('textarea',{class:'inp',rows:'2',onInput:e=>{S.siteSettings.heroSubtitle=e.target.value;}},cfg.heroSubtitle)),
+      row('Hero Background Gradient (CSS)',el('input',{class:'inp',value:cfg.heroGradient,onInput:e=>{S.siteSettings.heroGradient=e.target.value;}})),
       el('div',{style:{height:'80px',borderRadius:'var(--r)',display:'flex',alignItems:'center',justifyContent:'center',background:cfg.heroGradient,color:'#fff',fontSize:'14px',fontWeight:'700',marginBottom:'14px'}},'Preview: '+cfg.heroTitle)
     ),
 
     // Branding
     el('div',{class:'sec-card'},
       el('h3',{style:{fontSize:'14px',color:'var(--ink)',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}},ic('paint',15),' Branding & Colors'),
-      row('Site Name',el('input',{class:'inp',value:cfg.siteName,onInput:e=>ss({siteName:e.target.value})})),
+      row('Site Name',el('input',{class:'inp',value:cfg.siteName,onInput:e=>{S.siteSettings.siteName=e.target.value;}})),
       el('div',{class:'g2',style:{marginBottom:'14px'}},
         el('div',{},lbl('Accent Color'),
           el('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},
-            el('input',{type:'color',value:cfg.accentColor,style:{width:'44px',height:'36px',borderRadius:'8px',border:'1px solid var(--line)',cursor:'pointer'},onInput:e=>ss({accentColor:e.target.value})}),
-            el('input',{class:'inp',value:cfg.accentColor,style:{flex:1},onInput:e=>ss({accentColor:e.target.value})})
+            el('input',{type:'color',value:cfg.accentColor,style:{width:'44px',height:'36px',borderRadius:'8px',border:'1px solid var(--line)',cursor:'pointer'},onInput:e=>{S.siteSettings.accentColor=e.target.value;}}),
+            el('input',{class:'inp',value:cfg.accentColor,style:{flex:1},onInput:e=>{S.siteSettings.accentColor=e.target.value;}})
           )
         ),
-        el('div',{},lbl('Footer Text'),el('input',{class:'inp',value:cfg.footerText,onInput:e=>ss({footerText:e.target.value})}))
+        el('div',{},lbl('Footer Text'),el('input',{class:'inp',value:cfg.footerText,onInput:e=>{S.siteSettings.footerText=e.target.value;}}))
       )
     ),
 
@@ -888,9 +897,9 @@ function renderWebsiteS(){
     el('div',{class:'sec-card'},
       el('h3',{style:{fontSize:'14px',color:'var(--ink)',marginBottom:'14px',display:'flex',alignItems:'center',gap:'6px'}},ic('bell',15),' Contact & Social'),
       el('div',{class:'g2'},
-        el('div',{},row('WhatsApp Number',el('input',{class:'inp',placeholder:'+91 98765 43210',value:cfg.whatsapp,onInput:e=>ss({whatsapp:e.target.value})}))),
-        el('div',{},row('Contact Email',el('input',{class:'inp',placeholder:'hello@hotelradar.in',value:cfg.email,onInput:e=>ss({email:e.target.value})}))),
-        el('div',{},row('Phone Number',el('input',{class:'inp',placeholder:'+91 98765 43210',value:cfg.phone,onInput:e=>ss({phone:e.target.value})}))),
+        el('div',{},row('WhatsApp Number',el('input',{class:'inp',placeholder:'+91 98765 43210',value:cfg.whatsapp,onInput:e=>{S.siteSettings.whatsapp=e.target.value;}}))),
+        el('div',{},row('Contact Email',el('input',{class:'inp',placeholder:'hello@hotelradar.in',value:cfg.email,onInput:e=>{S.siteSettings.email=e.target.value;}}))),
+        el('div',{},row('Phone Number',el('input',{class:'inp',placeholder:'+91 98765 43210',value:cfg.phone,onInput:e=>{S.siteSettings.phone=e.target.value;}}))),
       )
     ),
 
@@ -901,7 +910,7 @@ function renderWebsiteS(){
         el('div',{class:'tog'+(cfg.showBanner?' on':''),onClick:()=>ss({showBanner:!cfg.showBanner})}),
         el('span',{style:{fontSize:'13px',fontWeight:'600',color:'var(--ink)'}},'Show Banner on Website')
       ),
-      cfg.showBanner?row('Banner Text',el('input',{class:'inp',value:cfg.bannerText,placeholder:'🎉 Announcement text...',onInput:e=>ss({bannerText:e.target.value})})):null
+      cfg.showBanner?row('Banner Text',el('input',{class:'inp',value:cfg.bannerText,placeholder:'🎉 Announcement text...',onInput:e=>{S.siteSettings.bannerText=e.target.value;}})):null
     ),
 
     // Maintenance Mode
@@ -1185,22 +1194,22 @@ function renderHotelForm(){
       ),
       el('div',{style:{padding:'16px',maxHeight:'68vh',overflowY:'auto',display:'flex',flexDirection:'column',gap:'13px'},class:'ns'},
         S.hfErr?el('div',{style:{display:'flex',alignItems:'center',gap:'7px',padding:'9px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',fontSize:'12px',color:'#DC2626'}},ic('warn',12),S.hfErr):null,
-        el('div',{},lbl('Hotel Name *'),el('input',{class:'inp',value:f.name||'',placeholder:'e.g. Ganga Palace Hotel',onInput:e=>sh({name:e.target.value})})),
-        el('div',{class:'g2'},el('div',{},lbl('City *'),el('input',{class:'inp',value:f.city||'',placeholder:'Haridwar',onInput:e=>sh({city:e.target.value})})),el('div',{},lbl('State *'),el('input',{class:'inp',value:f.state||'',placeholder:'Uttarakhand',onInput:e=>sh({state:e.target.value})}))),
-        el('div',{class:'g2'},el('div',{},lbl('Area'),el('input',{class:'inp',value:f.area||'',placeholder:'Har Ki Pauri Road',onInput:e=>sh({area:e.target.value})})),el('div',{},lbl('Phone *'),el('input',{class:'inp',value:f.phone||'',placeholder:'+91 98765 43210',onInput:e=>sh({phone:e.target.value})}))),
-        el('div',{class:'g2'},el('div',{},lbl('Price/Night (₹) *'),el('input',{class:'inp',type:'number',value:f.price||'',placeholder:'2800',onInput:e=>sh({price:e.target.value})})),el('div',{},lbl('Hotel Type'),el('select',{class:'inp',onChange:e=>sh({type:e.target.value})},...['hotel','resort','ashram','guesthouse','dharamshala','family'].map(t=>el('option',{value:t,...(f.type===t?{selected:true}:{})},t.charAt(0).toUpperCase()+t.slice(1)))))),
-        el('div',{class:'g2'},el('div',{},lbl('Check-in'),el('input',{class:'inp',value:f.checkIn||'12:00 PM',onInput:e=>sh({checkIn:e.target.value})})),el('div',{},lbl('Check-out'),el('input',{class:'inp',value:f.checkOut||'11:00 AM',onInput:e=>sh({checkOut:e.target.value})}))),
-        el('div',{class:'g2'},el('div',{},lbl('Rating'),el('input',{class:'inp',type:'number',min:'0',max:'5',step:'0.1',value:f.rating||'4.5',onInput:e=>sh({rating:e.target.value})})),el('div',{},lbl('Review Count'),el('input',{class:'inp',type:'number',value:f.reviewCount||'0',onInput:e=>sh({reviewCount:e.target.value})}))),
+        el('div',{},lbl('Hotel Name *'),el('input',{class:'inp',value:f.name||'',placeholder:'e.g. Ganga Palace Hotel',onInput:e=>{S.hf.name=e.target.value;}})),
+        el('div',{class:'g2'},el('div',{},lbl('City *'),el('input',{class:'inp',value:f.city||'',placeholder:'Haridwar',onInput:e=>{S.hf.city=e.target.value;}})),el('div',{},lbl('State *'),el('input',{class:'inp',value:f.state||'',placeholder:'Uttarakhand',onInput:e=>{S.hf.state=e.target.value;}}))),
+        el('div',{class:'g2'},el('div',{},lbl('Area'),el('input',{class:'inp',value:f.area||'',placeholder:'Har Ki Pauri Road',onInput:e=>{S.hf.area=e.target.value;}})),el('div',{},lbl('Phone *'),el('input',{class:'inp',value:f.phone||'',placeholder:'+91 98765 43210',onInput:e=>{S.hf.phone=e.target.value;}}))),
+        el('div',{class:'g2'},el('div',{},lbl('Price/Night (₹) *'),el('input',{class:'inp',type:'number',value:f.price||'',placeholder:'2800',onInput:e=>{S.hf.price=e.target.value;}})),el('div',{},lbl('Hotel Type'),el('select',{class:'inp',onChange:e=>sh({type:e.target.value})},...['hotel','resort','ashram','guesthouse','dharamshala','family'].map(t=>el('option',{value:t,...(f.type===t?{selected:true}:{})},t.charAt(0).toUpperCase()+t.slice(1)))))),
+        el('div',{class:'g2'},el('div',{},lbl('Check-in'),el('input',{class:'inp',value:f.checkIn||'12:00 PM',onInput:e=>{S.hf.checkIn=e.target.value;}})),el('div',{},lbl('Check-out'),el('input',{class:'inp',value:f.checkOut||'11:00 AM',onInput:e=>{S.hf.checkOut=e.target.value;}}))),
+        el('div',{class:'g2'},el('div',{},lbl('Rating'),el('input',{class:'inp',type:'number',min:'0',max:'5',step:'0.1',value:f.rating||'4.5',onInput:e=>{S.hf.rating=e.target.value;}})),el('div',{},lbl('Review Count'),el('input',{class:'inp',type:'number',value:f.reviewCount||'0',onInput:e=>{S.hf.reviewCount=e.target.value;}}))),
         el('div',{},lbl('Listing Plan'),el('select',{class:'inp',onChange:e=>sh({plan:e.target.value})},...['basic','priority','spotlight'].map(p=>el('option',{value:p,...(f.plan===p?{selected:true}:{})},p.charAt(0).toUpperCase()+p.slice(1))))),
-        el('div',{},lbl('Description'),el('textarea',{class:'inp',rows:'2',placeholder:'Write about your hotel...',onInput:e=>sh({desc:e.target.value})},f.desc||'')),
-        el('div',{class:'g2'},el('div',{},lbl('Hotel Emoji'),el('input',{class:'inp',value:f.emoji||'🏨',onInput:e=>sh({emoji:e.target.value})})),el('div',{},lbl('Gradient CSS'),el('input',{class:'inp',value:f.gradient||'',onInput:e=>sh({gradient:e.target.value})}))),
+        el('div',{},lbl('Description'),el('textarea',{class:'inp',rows:'2',placeholder:'Write about your hotel...',onInput:e=>{S.hf.desc=e.target.value;}},f.desc||'')),
+        el('div',{class:'g2'},el('div',{},lbl('Hotel Emoji'),el('input',{class:'inp',value:f.emoji||'🏨',onInput:e=>{S.hf.emoji=e.target.value;}})),el('div',{},lbl('Gradient CSS'),el('input',{class:'inp',value:f.gradient||'',onInput:e=>{S.hf.gradient=e.target.value;}}))),
         el('div',{style:{height:'40px',borderRadius:'8px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'24px',background:f.gradient||'var(--ac)'}},f.emoji||'🏨'),
         el('div',{},lbl('Amenities'),
           el('div',{style:{display:'flex',flexWrap:'wrap',gap:'5px',marginBottom:'7px'}},
             ...AMENITIES.map(a=>{const on=(f.amenities||[]).includes(a);return el('button',{class:'chip'+(on?' on':''),onClick:()=>sh({amenities:on?f.amenities.filter(x=>x!==a):[...(f.amenities||[]),a]})},a);})
           ),
           el('div',{style:{display:'flex',gap:'6px'}},
-            el('input',{class:'inp',style:{flex:1},placeholder:'Custom amenity...',value:S.amenityInput,onInput:e=>set({amenityInput:e.target.value}),onKeydown:e=>{if(e.key==='Enter'&&S.amenityInput.trim()){sh({amenities:[...(f.amenities||[]),S.amenityInput.trim()]});set({amenityInput:''});}}}),
+            el('input',{class:'inp',style:{flex:1},placeholder:'Custom amenity...',value:S.amenityInput,onInput:e=>setInput({amenityInput:e.target.value}),onKeydown:e=>{if(e.key==='Enter'&&S.amenityInput.trim()){sh({amenities:[...(f.amenities||[]),S.amenityInput.trim()]});set({amenityInput:''});}}}),
             el('button',{class:'btn ba',onClick:()=>{if(S.amenityInput.trim()){sh({amenities:[...(f.amenities||[]),S.amenityInput.trim()]});set({amenityInput:''});}}},'Add')
           )
         ),
@@ -1230,7 +1239,7 @@ function renderShareModal(){
       el('p',{style:{fontSize:'12px',color:'var(--ink-s)',marginBottom:'14px',lineHeight:'1.6'}},'Enter hotel owner Gmail → A unique link is generated → Share link → They login and see their panel.'),
       S.shareErr?el('div',{style:{display:'flex',alignItems:'center',gap:'6px',padding:'8px 12px',background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',marginBottom:'10px',fontSize:'12px',color:'#DC2626'}},ic('warn',12),S.shareErr):null,
       lbl('Hotel Owner Gmail *'),
-      el('input',{class:'inp',type:'email',placeholder:'owner@gmail.com',value:S.shareEmail,style:{marginBottom:'12px'},onInput:e=>set({shareEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&shareAdmin()}),
+      el('input',{class:'inp',type:'email',placeholder:'owner@gmail.com',value:S.shareEmail,style:{marginBottom:'12px'},onInput:e=>setInput({shareEmail:e.target.value}),onKeydown:e=>e.key==='Enter'&&shareAdmin()}),
       S.genLink?el('div',{style:{marginBottom:'12px'}},
         el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--good)',marginBottom:'5px'}},'✅ Link generated! Share with hotel owner:'),
         el('div',{class:'lbx'},el('span',{style:{flex:1,wordBreak:'break-all'}},S.genLink),
