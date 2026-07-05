@@ -251,24 +251,60 @@ function ss(p){set({siteSettings:{...S.siteSettings,...p}});}
 // FIREBASE
 // ══════════════════════════════════════════
 let db=null;
+// Prevent multiple auth checks
+let _authChecked=false;
+
 function initFB(){
   if(!firebase.apps.length)firebase.initializeApp(FB);
   db=firebase.database();
   firebase.auth().onAuthStateChanged(async u=>{
-    if(!u){set({authReady:true,isAuth:false});return;}
+    // If already authenticated and same user, ignore re-fires
+    if(S.isAuth && u && S.user?.email===u.email) return;
+
+    if(!u){
+      // Only show logged out if we were previously auth
+      if(_authChecked){
+        set({authReady:true,isAuth:false,user:null,myAdmin:null,myHotel:null});
+      } else {
+        set({authReady:true,isAuth:false});
+      }
+      _authChecked=true;
+      return;
+    }
+
+    _authChecked=true;
+
     if(IS_HOTEL){
       const email=u.email,exp=decodeURIComponent(HOTEL_EMAIL);
-      if(email.toLowerCase()!==exp.toLowerCase()){await firebase.auth().signOut();set({authReady:true,isAuth:false,lErr:`This panel is for: ${exp}`});return;}
-      const key=email.replace(/\./g,'_');
-      const snap=await db.ref(`sharedAdmins/${key}`).get();
-      if(!snap.exists()){await firebase.auth().signOut();set({authReady:true,isAuth:false,lErr:'Access not granted. Contact HotelRadar admin.'});return;}
-      const ad=snap.val();
-      set({authReady:true,isAuth:true,user:u,myAdmin:{...ad,key},showWelcome:true});
-      setTimeout(()=>set({showWelcome:false}),3200);
-      loadHotelData(email,key,ad);
+      if(email.toLowerCase()!==exp.toLowerCase()){
+        set({authReady:true,isAuth:false,lErr:`This panel is for: ${exp}`});
+        return;
+      }
+      try{
+        const key=email.replace(/\./g,'_');
+        const snap=await db.ref(`sharedAdmins/${key}`).get();
+        if(!snap.exists()){
+          set({authReady:true,isAuth:false,lErr:'Access not granted. Contact HotelRadar admin.'});
+          return;
+        }
+        const ad=snap.val();
+        // Check if active
+        if(ad.active===false){
+          set({authReady:true,isAuth:false,lErr:'Your access has been deactivated. Contact HotelRadar.'});
+          return;
+        }
+        set({authReady:true,isAuth:true,user:u,myAdmin:{...ad,key},showWelcome:true,gLoad:false,lLoading:false,lErr:''});
+        setTimeout(()=>set({showWelcome:false}),3200);
+        loadHotelData(email,key,ad);
+      } catch(e){
+        set({authReady:true,isAuth:false,lErr:'Error checking access. Try again.'});
+      }
     } else {
-      if(u.email!==SUPER_EMAIL){await firebase.auth().signOut();set({authReady:true,isAuth:false,lErr:'Access denied. Only Super Admin can login here.'});return;}
-      set({authReady:true,isAuth:true,user:u});
+      if(u.email!==SUPER_EMAIL){
+        set({authReady:true,isAuth:false,lErr:'Access denied. Only Super Admin can login here.'});
+        return;
+      }
+      set({authReady:true,isAuth:true,user:u,gLoad:false,lLoading:false,lErr:''});
       loadSuperData();
     }
   });
@@ -306,16 +342,41 @@ function loadHotelData(email,key,ad){
 }
 
 async function doLogin(){
-  if(S.lLoading)return;set({lLoading:true,lErr:''});
-  try{await firebase.auth().signInWithEmailAndPassword(S.lEmail,S.lPass);}
-  catch(e){const c=e.code||'';set({lLoading:false,lErr:c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-credential'?'Invalid email or password.':e.message||'Login failed.'});}
+  if(S.lLoading)return;
+  set({lLoading:true,lErr:''});
+  try{
+    await firebase.auth().signInWithEmailAndPassword(S.lEmail,S.lPass);
+    // onAuthStateChanged handles rest — don't set anything here
+  } catch(e){
+    const c=e.code||'';
+    const msg=c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-credential'?'Invalid email or password.':
+              c==='auth/too-many-requests'?'Too many attempts. Wait a few minutes or reset password.':
+              c==='auth/network-request-failed'?'Network error. Check your internet.':
+              e.message||'Login failed.';
+    set({lLoading:false,lErr:msg});
+  }
 }
 async function doGoogle(){
   set({gLoad:true,lErr:''});
-  try{const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});await firebase.auth().signInWithPopup(p);}
-  catch(e){set({gLoad:false,lErr:'Google sign-in failed. Try again.'});}
+  try{
+    const p=new firebase.auth.GoogleAuthProvider();
+    p.setCustomParameters({prompt:'select_account'});
+    await firebase.auth().signInWithPopup(p);
+    // onAuthStateChanged will handle the rest
+  } catch(e){
+    const msg=e.code==='auth/popup-closed-by-user'?'Popup was closed. Try again.':
+              e.code==='auth/popup-blocked'?'Popup blocked. Allow popups and try again.':
+              'Google sign-in failed. Try again.';
+    set({gLoad:false,lErr:msg});
+  }
 }
-async function doSignOut(){await firebase.auth().signOut();set({isAuth:false,user:null,tab:'dashboard'});}
+async function doSignOut(){
+  try{
+    _authChecked=false;
+    await firebase.auth().signOut();
+  } catch(e){}
+  set({isAuth:false,user:null,tab:'dashboard',myAdmin:null,myHotel:null,myBookings:[],myReviews:[],hotels:[],sharedAdmins:[],payments:[],bookings:[],lErr:''});
+}
 
 // Hotel ops
 async function saveHotel(){
