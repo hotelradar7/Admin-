@@ -199,12 +199,15 @@ let S={
   authReady:false,isAuth:false,user:null,
   tab:'dashboard',
   // super data
-  hotels:[],sharedAdmins:[],payments:[],bookings:[],searchLogs:[],
+  hotels:[],sharedAdmins:[],payments:[],bookings:[],searchLogs:[],hotelRequests:[],
   // hotel admin data
   myAdmin:null,myHotel:null,myBookings:[],myReviews:[],
   loading:true,
   selectedRoom:null,
   showWelcome:false,
+  showRoomEditor:false,
+  editingRooms:[],
+  roomFeatureInput:'',
   hfStep:1,
   // forms
   showHotelForm:false,editHotel:null,
@@ -257,6 +260,8 @@ let _authChecked=false;
 function initFB(){
   if(!firebase.apps.length)firebase.initializeApp(FB);
   db=firebase.database();
+  // Keep user logged in across page refreshes
+  firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
   firebase.auth().onAuthStateChanged(async u=>{
     // If already authenticated and same user, ignore re-fires
     if(S.isAuth && u && S.user?.email===u.email) return;
@@ -319,6 +324,7 @@ function loadSuperData(){
   db.ref('sharedAdmins').on('value',s=>{const d=s.val();if(!d){set({sharedAdmins:[]});return;}set({sharedAdmins:Object.keys(d).map(k=>({...d[k],key:k}))});});
   db.ref('payments').on('value',s=>{const d=s.val();if(!d){set({payments:[]});return;}set({payments:Object.keys(d).map(k=>({...d[k],id:k}))});});
   db.ref('bookings').on('value',s=>{const d=s.val();if(!d){set({bookings:[]});return;}set({bookings:Object.keys(d).map(k=>({...d[k],id:k}))});});
+  db.ref('hotelRequests').on('value',s=>{const d=s.val();if(!d){set({hotelRequests:[]});return;}set({hotelRequests:Object.keys(d).map(k=>({...d[k],id:k})).sort((a,b)=>new Date(b.submittedAt||0)-new Date(a.submittedAt||0))});});
   db.ref('searchLogs').limitToLast(300).on('value',s=>{const d=s.val();if(!d){set({searchLogs:[]});return;}set({searchLogs:Object.keys(d).map(k=>({...d[k],id:k})).reverse()});});
   db.ref('siteSettings').get().then(s=>{if(s.exists())set({siteSettings:{...S.siteSettings,...s.val()}});});
 }
@@ -389,8 +395,17 @@ async function saveHotel(){
     const existId=S.editHotel?.id||(IS_HOTEL?S.myAdmin?.hotelId:null);
     const id=existId||('h'+Date.now());
     const h={...S.hf,id,price:Number(S.hf.price)||0,rating:Number(S.hf.rating)||4.5,reviewCount:Number(S.hf.reviewCount)||0,createdAt:existId?(S.editHotel?.createdAt||new Date().toISOString()):new Date().toISOString()};
-    if(IS_HOTEL){h.ownerEmail=S.user.email;await db.ref(`sharedAdmins/${S.myAdmin.key}`).update({hotelId:id});}
-    await db.ref(`hotels/${id}`)[existId?'update':'set'](h);
+    if(IS_HOTEL){
+      h.ownerEmail=S.user.email;
+      h.approved=false; // needs super admin approval
+      h.active=true;
+      await db.ref(`sharedAdmins/${S.myAdmin.key}`).update({hotelId:id});
+    }
+    if(existId){
+      await db.ref(`hotels/${id}`).update(h);
+    } else {
+      await db.ref(`hotels/${id}`).set(h);
+    }
     toast(existId?'Hotel updated!':'Hotel added!');
     set({showHotelForm:false,editHotel:null,hfSaving:false});
   }catch(e){set({hfErr:e.message||'Save failed',hfSaving:false});}
@@ -549,6 +564,7 @@ const SUPER_NAVS=[
   {id:'analytics',l:'Analytics',i:'bar'},
   {id:'bookings',l:'Bookings',i:'book'},
   {id:'website',l:'Website Settings',i:'globe'},
+  {id:'requests',l:'Hotel Requests',i:'bell'},
   {id:'activity',l:'Activity Log',i:'act'},
 ];
 
@@ -1023,6 +1039,131 @@ function renderWebsiteS(){
   );
 }
 
+
+// ══════════════════════════════════════════
+// SUPER ADMIN — HOTEL REQUESTS
+// ══════════════════════════════════════════
+function renderRequestsS(){
+  const reqs=S.hotelRequests;
+  const pending=reqs.filter(r=>r.status==='pending');
+  const approved=reqs.filter(r=>r.status==='approved');
+
+  async function approveReq(req){
+    // 1. Update status
+    await db.ref(`hotelRequests/${req.id}`).update({status:'approved',approvedAt:new Date().toISOString()});
+    // 2. Create sharedAdmin entry so they can login
+    const key=req.email.replace(/\./g,'_');
+    await db.ref(`sharedAdmins/${key}`).set({
+      email:req.email,
+      hotelName:req.hotelName,
+      ownerName:req.ownerName,
+      phone:req.phone,
+      addedAt:new Date().toISOString(),
+      addedBy:'superadmin',
+      active:true,
+      plan:'free',
+      planExpiry:new Date(Date.now()+30*864e5).toISOString(),
+    });
+    // 3. Generate their panel link
+    const link=`${location.origin}${location.pathname}?admin=${encodeURIComponent(req.email)}`;
+    set({approvedLink:link,approvedReq:req});
+    toast('Hotel approved! Share the panel link with owner.');
+  }
+
+  async function rejectReq(id){
+    await db.ref(`hotelRequests/${id}`).update({status:'rejected',rejectedAt:new Date().toISOString()});
+    toast('Request rejected.');
+  }
+
+  return el('div',{class:'content fi'},
+    el('div',{class:'g3',style:{marginBottom:'16px'}},
+      mkStat(reqs.length,'Total Requests','var(--ac)','bell'),
+      mkStat(pending.length,'Pending Review','#F59E0B','warn'),
+      mkStat(approved.length,'Approved','var(--good)','check')
+    ),
+
+    // Approved link modal
+    S.approvedLink&&el('div',{style:{marginBottom:'16px',padding:'16px',background:'var(--gd)',border:'1px solid #86EFAC',borderRadius:'var(--r2)'}},
+      el('p',{style:{fontSize:'12px',fontWeight:'700',color:'var(--good)',marginBottom:'4px'}},'✅ '+S.approvedReq?.hotelName+' approved!'),
+      el('p',{style:{fontSize:'11px',color:'var(--good)',marginBottom:'8px'}},'Share this Hotel Admin Panel link with owner ('+S.approvedReq?.email+'):'),
+      el('div',{class:'lbx',style:{marginBottom:'8px'}},
+        el('span',{style:{flex:1,fontSize:'11px',wordBreak:'break-all'}},S.approvedLink),
+        el('button',{style:{flexShrink:0,display:'flex',alignItems:'center',gap:'3px',padding:'5px 9px',background:'var(--ac)',color:'#fff',fontWeight:'700',fontSize:'11px',borderRadius:'6px'},
+          onClick:()=>{navigator.clipboard.writeText(S.approvedLink);toast('Link copied!');}},ic('copy',11),'Copy')
+      ),
+      el('a',{href:'https://wa.me/'+S.approvedReq?.phone?.replace(/\D/g,'')+'?text='+encodeURIComponent('Congratulations '+S.approvedReq?.ownerName+'! Your hotel '+S.approvedReq?.hotelName+' has been approved on HotelRadar. Here is your Hotel Admin Panel link to setup your listing: '+S.approvedLink+' Login with your Gmail ('+S.approvedReq?.email+') to get started. First 30 days are FREE!'),
+        target:'_blank',
+        style:{display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',padding:'9px',background:'#25D366',color:'#fff',fontWeight:'700',fontSize:'12px',borderRadius:'8px',textDecoration:'none',marginBottom:'6px'}},
+        '💬 Send via WhatsApp to '+S.approvedReq?.phone),
+      el('button',{style:{fontSize:'11px',color:'var(--ink-s)',cursor:'pointer',textDecoration:'underline'},onClick:()=>set({approvedLink:'',approvedReq:null})},'Dismiss')
+    ),
+
+    // Pending requests
+    pending.length>0&&el('div',{class:'card',style:{overflow:'hidden',marginBottom:'14px'}},
+      el('div',{style:{padding:'12px 16px',borderBottom:'1px solid var(--line)',background:'#FEF3C7'}},
+        el('h3',{style:{fontSize:'13px',color:'#92400E',display:'flex',alignItems:'center',gap:'6px'}},ic('warn',14),'Pending Approval ('+pending.length+')')
+      ),
+      el('div',{style:{display:'flex',flexDirection:'column'}},
+        ...pending.map((req,i)=>
+          el('div',{style:{padding:'14px 16px',borderBottom:i<pending.length-1?'1px solid var(--line)':'none'}},
+            el('div',{style:{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:'10px',marginBottom:'10px'}},
+              el('div',{},
+                el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}} ,req.hotelName),
+                el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginTop:'2px'}},req.ownerName+' · '+req.city+', '+req.state),
+                el('p',{style:{fontSize:'11px',color:'var(--ink-s)'}},'📞 '+req.phone+' · 📧 '+req.email),
+                req.website&&el('p',{style:{fontSize:'11px',color:'var(--blue)'}},'🌐 '+req.website),
+                el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginTop:'2px'}},'Type: '+req.type+' · Price: '+(req.priceRange||'—')),
+                req.message&&el('p',{style:{fontSize:'11px',color:'var(--ink-s)',fontStyle:'italic',marginTop:'2px'}},'📝 '+req.message),
+                req.hasDocs?.length>0&&el('div',{style:{marginTop:'6px',display:'flex',flexWrap:'wrap',gap:'4px'}},
+                  el('span',{style:{fontSize:'9px',fontWeight:'700',color:'var(--ink-f)'}},'Docs: '),
+                  ...req.hasDocs.map(d=>el('span',{class:'b b-g',style:{fontSize:'9px'}},d))
+                ),
+                el('p',{style:{fontSize:'10px',color:'var(--ink-f)',marginTop:'4px'}},'Submitted: '+fmtT(req.submittedAt))
+              )
+            ),
+            el('div',{style:{display:'flex',gap:'8px'}},
+              el('button',{class:'btn bg',style:{flex:1,justifyContent:'center'},onClick:()=>approveReq(req)},ic('check',13),'Approve & Send Panel Link'),
+              el('button',{class:'btn br',style:{padding:'9px 14px'},onClick:()=>rejectReq(req.id)},ic('x',13),'Reject')
+            )
+          )
+        )
+      )
+    ),
+
+    // Approved requests
+    approved.length>0&&el('div',{class:'card',style:{overflow:'hidden'}},
+      el('div',{style:{padding:'12px 16px',borderBottom:'1px solid var(--line)'}},
+        el('h3',{style:{fontSize:'13px',color:'var(--ink)'}},'Approved Hotels ('+approved.length+')')
+      ),
+      el('table',{class:'tbl'},
+        el('thead',{},el('tr',{},...['Hotel','Owner','Email','City','Approved','Actions'].map(h=>el('th',{},h)))),
+        el('tbody',{},
+          ...approved.map(req=>{
+            const link=`${location.origin}${location.pathname}?admin=${encodeURIComponent(req.email)}`;
+            return el('tr',{},
+              el('td',{style:{fontWeight:'700',fontSize:'12px'}},req.hotelName),
+              el('td',{style:{fontSize:'12px'}},req.ownerName),
+              el('td',{style:{fontSize:'12px'}},req.email),
+              el('td',{style:{fontSize:'12px'}},req.city),
+              el('td',{style:{fontSize:'11px',color:'var(--ink-s)'}},fmt(req.approvedAt)),
+              el('td',{},
+                el('button',{style:{display:'flex',alignItems:'center',gap:'3px',padding:'4px 8px',background:'var(--bd)',color:'var(--blue)',fontWeight:'700',fontSize:'10px',borderRadius:'6px'},
+                  onClick:()=>{navigator.clipboard.writeText(link);toast('Link copied!');}},ic('copy',10),'Copy Link')
+              )
+            );
+          })
+        )
+      )
+    ),
+
+    reqs.length===0&&el('div',{class:'card',style:{padding:'48px',textAlign:'center'}},
+      el('p',{style:{fontSize:'32px',marginBottom:'10px'}},'📋'),
+      el('p',{style:{fontSize:'14px',fontWeight:'700',color:'var(--ink)',marginBottom:'6px'}},'No Requests Yet'),
+      el('p',{style:{fontSize:'12px',color:'var(--ink-s)'}},'Hotel listing requests from website will appear here.')
+    )
+  );
+}
+
 // ══════════════════════════════════════════
 // SUPER ADMIN — ACTIVITY
 // ══════════════════════════════════════════
@@ -1087,12 +1228,22 @@ const DEMO_HOTEL = {
 };
 
 // Room categories for preview
-function getDemoRooms(basePrice){
-  return [
+function getDemoRooms(basePrice, customRooms){
+  const base = [
     {id:'cat1',label:'Category 1',emoji:'🛏️',tag:'Best Value',tagColor:'good',mult:1,maxGuests:2,bedType:'Double Bed',size:'180 sq ft',features:['AC','TV','WiFi','Hot Water','Daily Housekeeping']},
     {id:'cat2',label:'Category 2',emoji:'✨',tag:'Most Popular',tagColor:'accent',mult:1.5,maxGuests:2,bedType:'King Bed',size:'240 sq ft',features:['AC','Smart TV','WiFi','Mini Fridge','City View','Room Service']},
     {id:'cat3',label:'Category 3',emoji:'🌟',tag:'Premium',tagColor:'accent',mult:2,maxGuests:3,bedType:'Super King',size:'300 sq ft',features:['AC','Smart TV','WiFi','Mini Bar','Balcony','Bathtub','24/7 Service']},
   ];
+  if(customRooms && customRooms.length>0){
+    // merge: keep base labels but override with custom data
+    return base.map((r,i)=>({
+      ...r,
+      ...(customRooms[i]||{}),
+      id: r.id,
+      label: r.label,
+    }));
+  }
+  return base;
 }
 
 function renderDashH(){
@@ -1156,7 +1307,7 @@ function renderDashH(){
 function renderHotelH(){
   const h=S.myHotel||DEMO_HOTEL;
   const isDemo=!S.myHotel;
-  const rooms=getDemoRooms(h.price||2500);
+  const rooms=getDemoRooms(h.price||2500, h.customRooms);
   const selRoom=S.selectedRoom;
 
   const wrap=el('div',{style:{paddingBottom:'16px'}});
@@ -1190,7 +1341,13 @@ function renderHotelH(){
 
   // ── ROOM CATEGORIES STRIP (below image, exactly like website) ──
   const roomStrip=el('div',{style:{padding:'14px 16px 0'}},
-    el('p',{style:{fontSize:'10px',fontWeight:'900',textTransform:'uppercase',letterSpacing:'.08em',color:'var(--ink-f)',marginBottom:'10px'}},'🛏 Room Categories'),
+    el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}},
+      el('p',{style:{fontSize:'10px',fontWeight:'900',textTransform:'uppercase',letterSpacing:'.08em',color:'var(--ink-f)'}},'🛏 Room Categories'),
+      isDemo?null:el('button',{
+        style:{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'var(--acd)',color:'var(--aci)',fontWeight:'700',fontSize:'10px',borderRadius:'6px',cursor:'pointer'},
+        onClick:()=>set({showRoomEditor:true,editingRooms:JSON.parse(JSON.stringify(rooms))})
+      },ic('edit',11),'Edit Rooms')
+    ),
     el('div',{style:{display:'flex',gap:'10px',overflowX:'auto',paddingBottom:'4px'}},
       ...rooms.map(room=>{
         const isActive=selRoom===room.id;
@@ -1557,6 +1714,30 @@ function renderHotelForm(){
           )
         )
       ),
+      // Image URL
+      el('div',{},
+        lbl('Hotel Photo URL (optional)'),
+        el('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},
+          el('input',{class:'inp',style:{flex:1},value:f.imageUrl||'',
+            placeholder:'Paste image URL or leave blank...',
+            onInput:e=>{S.hf.imageUrl=e.target.value;}}),
+          el('button',{
+            style:{width:'38px',height:'38px',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--acd)',border:'2px dashed var(--ac)',borderRadius:'8px',cursor:'pointer'},
+            title:'Add image URL',
+            onClick:()=>{
+              const url=prompt('Paste your hotel image URL:');
+              if(url){S.hf.imageUrl=url;render();}
+            }
+          },ic('plus',16)),
+        ),
+        f.imageUrl?el('div',{style:{marginTop:'8px',borderRadius:'10px',overflow:'hidden',height:'80px',position:'relative'}},
+          el('img',{src:f.imageUrl,style:{width:'100%',height:'100%',objectFit:'cover'},onerror:()=>{}}),
+          el('button',{
+            style:{position:'absolute',top:'4px',right:'4px',background:'rgba(0,0,0,.6)',color:'#fff',borderRadius:'50%',width:'22px',height:'22px',display:'flex',alignItems:'center',justifyContent:'center'},
+            onClick:()=>{S.hf.imageUrl='';render();}
+          },ic('x',11))
+        ):el('p',{style:{fontSize:'10px',color:'var(--ink-f)',marginTop:'4px'}},'Tip: Upload photo to Google Photos/Drive and paste the link here')
+      ),
       el('div',{},
         lbl('Card Background Theme'),
         el('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'8px'}},
@@ -1766,6 +1947,140 @@ function renderToast(){
   return d;
 }
 
+
+// ══════════════════════════════════════════
+// ROOM EDITOR MODAL
+// ══════════════════════════════════════════
+function renderRoomEditor(){
+  const rooms = S.editingRooms || [];
+
+  async function saveRooms(){
+    const h = S.myHotel;
+    if(!h||!db) return;
+    await db.ref(`hotels/${h.id}`).update({customRooms: rooms});
+    set({showRoomEditor:false});
+    toast('Room categories saved!');
+  }
+
+  const modal = el('div',{style:{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',zIndex:60,display:'flex',alignItems:'flex-end',justifyContent:'center'}},
+    el('div',{style:{width:'100%',maxWidth:'520px',background:'var(--card)',borderRadius:'20px 20px 0 0',maxHeight:'88vh',display:'flex',flexDirection:'column'}},
+      // Header
+      el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'14px 16px',borderBottom:'1px solid var(--line)',flexShrink:0}},
+        el('div',{},
+          el('h3',{style:{fontSize:'15px',fontFamily:'Fraunces,serif',color:'var(--ink)'}},'Edit Room Categories'),
+          el('p',{style:{fontSize:'11px',color:'var(--ink-f)',marginTop:'2px'}},'Customize features for each room category')
+        ),
+        el('button',{style:{width:'30px',height:'30px',display:'flex',alignItems:'center',justifyContent:'center',borderRadius:'50%',background:'var(--pd)',color:'var(--ink-s)'},
+          onClick:()=>set({showRoomEditor:false})},ic('x',13))
+      ),
+      // Body
+      el('div',{style:{overflowY:'auto',flex:1,padding:'14px',display:'flex',flexDirection:'column',gap:'14px'}},
+        ...rooms.map((room,ri)=>{
+          const EMOJIS=['🛏️','✨','🌟','👑','🏡','🌊','🔑','💎'];
+          const FEATURES_LIST=['AC','WiFi','TV','Hot Water','Mini Fridge','Mini Bar','Balcony','Bathtub','City View','Mountain View','Room Service','24/7 Service','Butler','Jacuzzi','King Bed','Super King','Sofa Bed','Extra Bed'];
+
+          return el('div',{style:{background:'var(--pd)',borderRadius:'12px',padding:'14px',border:'1px solid var(--line)'}},
+            // Room header
+            el('div',{style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px'}},
+              el('span',{style:{fontSize:'22px'}},room.emoji||'🛏️'),
+              el('div',{},
+                el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Category '+(ri+1)),
+                el('p',{style:{fontSize:'10px',color:'var(--ink-f)'}},'Price multiplier: x'+room.mult)
+              )
+            ),
+
+            // Emoji picker
+            el('div',{style:{marginBottom:'10px'}},
+              el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'5px'}},'EMOJI'),
+              el('div',{style:{display:'flex',flexWrap:'wrap',gap:'5px'}},
+                ...EMOJIS.map(e=>
+                  el('button',{
+                    style:{width:'34px',height:'34px',fontSize:'18px',borderRadius:'8px',border:'2px solid '+(room.emoji===e?'var(--ac)':'var(--line)'),background:room.emoji===e?'var(--acd)':'var(--card)',cursor:'pointer'},
+                    onClick:()=>{S.editingRooms[ri].emoji=e;render();}
+                  },e)
+                )
+              )
+            ),
+
+            // Bed type & size
+            el('div',{class:'g2',style:{marginBottom:'10px'}},
+              el('div',{},
+                el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'4px'}},'BED TYPE'),
+                el('input',{class:'inp',style:{fontSize:'12px'},value:room.bedType||'',placeholder:'e.g. King Bed',
+                  onInput:e=>{S.editingRooms[ri].bedType=e.target.value;}})
+              ),
+              el('div',{},
+                el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'4px'}},'SIZE'),
+                el('input',{class:'inp',style:{fontSize:'12px'},value:room.size||'',placeholder:'e.g. 240 sq ft',
+                  onInput:e=>{S.editingRooms[ri].size=e.target.value;}})
+              )
+            ),
+
+            // Max guests
+            el('div',{style:{marginBottom:'10px'}},
+              el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'4px'}},'MAX GUESTS'),
+              el('div',{style:{display:'flex',gap:'6px'}},
+                ...[1,2,3,4,5,6].map(n=>
+                  el('button',{
+                    style:{width:'34px',height:'34px',borderRadius:'8px',border:'2px solid '+(room.maxGuests===n?'var(--ac)':'var(--line)'),background:room.maxGuests===n?'var(--ac)':'var(--card)',color:room.maxGuests===n?'#fff':'var(--ink)',fontWeight:'700',fontSize:'12px',cursor:'pointer'},
+                    onClick:()=>{S.editingRooms[ri].maxGuests=n;render();}
+                  },n)
+                )
+              )
+            ),
+
+            // Features - preset chips
+            el('div',{},
+              el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'6px'}},'FEATURES'),
+              el('div',{style:{display:'flex',flexWrap:'wrap',gap:'5px',marginBottom:'7px'}},
+                ...FEATURES_LIST.map(feat=>{
+                  const on=(room.features||[]).includes(feat);
+                  return el('button',{
+                    style:{padding:'4px 9px',borderRadius:'999px',border:'1px solid '+(on?'var(--ac)':'var(--line)'),background:on?'var(--ac)':'var(--card)',color:on?'#fff':'var(--ink-s)',fontSize:'11px',fontWeight:'600',cursor:'pointer'},
+                    onClick:()=>{
+                      S.editingRooms[ri].features = on
+                        ? (room.features||[]).filter(f=>f!==feat)
+                        : [...(room.features||[]),feat];
+                      render();
+                    }
+                  },feat);
+                })
+              ),
+              // Custom feature input
+              el('div',{style:{display:'flex',gap:'6px'}},
+                el('input',{class:'inp',style:{flex:1,fontSize:'12px'},placeholder:'Add custom feature...',
+                  value:S.roomFeatureInput||'',
+                  onInput:e=>setInput({roomFeatureInput:e.target.value}),
+                  onKeydown:e=>{
+                    if(e.key==='Enter'&&S.roomFeatureInput?.trim()){
+                      S.editingRooms[ri].features=[...(room.features||[]),S.roomFeatureInput.trim()];
+                      set({roomFeatureInput:''});
+                    }
+                  }
+                }),
+                el('button',{class:'btn ba',style:{flexShrink:0,fontSize:'12px'},
+                  onClick:()=>{
+                    if(S.roomFeatureInput?.trim()){
+                      S.editingRooms[ri].features=[...(room.features||[]),S.roomFeatureInput.trim()];
+                      set({roomFeatureInput:''});
+                    }
+                  }
+                },'Add')
+              )
+            )
+          );
+        })
+      ),
+      // Footer
+      el('div',{style:{padding:'12px 16px',borderTop:'1px solid var(--line)',flexShrink:0,display:'flex',gap:'10px'}},
+        el('button',{class:'btn bo',style:{flex:1,justifyContent:'center'},onClick:()=>set({showRoomEditor:false})},'Cancel'),
+        el('button',{class:'btn ba',style:{flex:2,justifyContent:'center'},onClick:saveRooms},ic('save',13),'Save Room Categories')
+      )
+    )
+  );
+  return modal;
+}
+
 // ══════════════════════════════════════════
 // WELCOME ANIMATION
 // ══════════════════════════════════════════
@@ -1833,6 +2148,7 @@ function render(){
         S.tab==='analytics'?renderAnalyticsS():
         S.tab==='bookings'?renderBookingsS():
         S.tab==='website'?renderWebsiteS():
+        S.tab==='requests'?renderRequestsS():
         S.tab==='activity'?renderActivityS():
         el('div',{class:'content'},'')
       )
@@ -1843,6 +2159,7 @@ function render(){
 
   // Modals
   if(S.showHotelForm||S.editHotel)app.appendChild(renderHotelForm());
+  if(S.showRoomEditor)app.appendChild(renderRoomEditor());
   if(S.showShare)app.appendChild(renderShareModal());
   if(S.showPayment)app.appendChild(renderPaymentModal());
   if(S.delId)app.appendChild(renderConfirm());
