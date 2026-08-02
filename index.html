@@ -229,6 +229,7 @@ let S={
   roomFeatureInput:'',
   // gallery state
   imgUploading:false,imgUploadProg:0,imgUploadErr:'',
+  roomEditorFocus:null,
   hfStep:1,
   // forms
   showHotelForm:false,editHotel:null,
@@ -1452,78 +1453,79 @@ function renderHotelH(){
   imgCard.appendChild(editBtn);
   wrap.appendChild(imgCard);
 
-  // ── ROOM CATEGORIES STRIP (below image, exactly like website) ──
+  // ── ROOM CATEGORIES STRIP — with inline Edit & Delete ──
   const roomStrip=el('div',{style:{padding:'14px 16px 0'}},
     el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:'10px'}},
       el('p',{style:{fontSize:'10px',fontWeight:'900',textTransform:'uppercase',letterSpacing:'.08em',color:'var(--ink-f)'}},'🛏 Room Categories'),
       isDemo?null:el('button',{
         style:{display:'flex',alignItems:'center',gap:'4px',padding:'5px 10px',background:'var(--acd)',color:'var(--aci)',fontWeight:'700',fontSize:'10px',borderRadius:'6px',cursor:'pointer'},
         onClick:()=>set({showRoomEditor:true,editingRooms:JSON.parse(JSON.stringify(rooms))})
-      },ic('edit',11),'Edit Rooms')
+      },ic('plus',11),'Add / Edit All')
     ),
-    el('div',{style:{display:'flex',gap:'10px',overflowX:'auto',paddingBottom:'4px'}},
-      ...rooms.map(room=>{
-        const isActive=selRoom===room.id;
+
+    // Room cards — each with its own Edit and Delete
+    el('div',{style:{display:'flex',flexDirection:'column',gap:'10px'}},
+      ...rooms.map((room,ri)=>{
         const price=Math.round(h.price*room.mult);
-        const btn=el('button',{
-          style:{flexShrink:0,display:'flex',flexDirection:'column',alignItems:'center',padding:'10px 14px',borderRadius:'12px',border:'2px solid '+(isActive?'var(--ac)':'var(--line)'),background:isActive?'var(--ac)':'var(--card)',cursor:'pointer',transition:'all .15s',minWidth:'90px'},
-          onClick:()=>set({selectedRoom:isActive?null:room.id})
-        },
-          el('span',{style:{fontSize:'22px',marginBottom:'4px'}},room.emoji),
-          el('span',{style:{fontSize:'11px',fontWeight:'700',color:isActive?'#fff':'var(--ink)',whiteSpace:'nowrap'}},room.label),
-          el('span',{style:{fontSize:'10px',color:isActive?'rgba(255,255,255,.8)':'var(--ink-f)',marginTop:'2px'}},'₹'+price.toLocaleString('en-IN')+'/night'),
-          el('span',{style:{marginTop:'4px',fontSize:'8px',fontWeight:'800',textTransform:'uppercase',padding:'2px 6px',borderRadius:'999px',background:isActive?'rgba(255,255,255,.25)':(room.tagColor==='accent'?'var(--acd)':'var(--gd)'),color:isActive?'#fff':(room.tagColor==='accent'?'var(--aci)':'var(--good)')}},room.tag)
-        );
-        return btn;
+        const card=el('div',{
+          style:{background:'var(--card)',border:'1px solid var(--line)',borderRadius:'14px',overflow:'hidden'}
+        });
+
+        // Card header — emoji + name + price + action buttons
+        card.appendChild(el('div',{style:{display:'flex',alignItems:'center',gap:'10px',padding:'12px 14px',borderBottom:'1px solid var(--line)',background:'var(--pd)'}},
+          el('span',{style:{fontSize:'26px'}},room.emoji),
+          el('div',{style:{flex:1}},
+            el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},room.label),
+            el('p',{style:{fontSize:'11px',color:'var(--ink-s)',marginTop:'1px'}},room.bedType+' · '+room.size+' · Max '+room.maxGuests+' guests')
+          ),
+          el('div',{style:{textAlign:'right',flexShrink:0}},
+            el('p',{style:{fontSize:'15px',fontWeight:'700',color:'var(--ink)'}},'₹'+price.toLocaleString('en-IN')),
+            el('p',{style:{fontSize:'9px',color:'var(--ink-f)'}},'per night')
+          )
+        ));
+
+        // Features row
+        card.appendChild(el('div',{style:{padding:'10px 14px',borderBottom:'1px solid var(--line)'}},
+          el('div',{style:{display:'flex',flexWrap:'wrap',gap:'5px'}},
+            ...(room.features||[]).map(f=>
+              el('span',{style:{padding:'3px 8px',background:'var(--gd)',color:'var(--good)',borderRadius:'999px',fontSize:'10px',fontWeight:'700'}},f)
+            )
+          )
+        ));
+
+        // Action buttons — Edit inline + Delete
+        if(!isDemo){
+          card.appendChild(el('div',{style:{display:'flex',gap:'0',borderTop:'none'}},
+            el('button',{
+              style:{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:'5px',padding:'9px',fontSize:'12px',fontWeight:'700',color:'var(--aci)',background:'var(--acd)',border:'none',cursor:'pointer',borderBottomLeftRadius:'14px',transition:'background .12s'},
+              onClick:()=>{
+                // Open room editor focused on this room
+                const editRooms=JSON.parse(JSON.stringify(rooms));
+                set({showRoomEditor:true, editingRooms:editRooms, roomEditorFocus:ri});
+              }
+            },ic('edit',13),'Edit Room'),
+            el('div',{style:{width:'1px',background:'var(--line)'}}),
+            el('button',{
+              style:{flex:1,display:'flex',alignItems:'center',justifyContent:'center',gap:'5px',padding:'9px',fontSize:'12px',fontWeight:'700',color:'#DC2626',background:'#FEF2F2',border:'none',cursor:'pointer',borderBottomRightRadius:'14px',transition:'background .12s'},
+              onClick:()=>{
+                if(!confirm('Delete "'+room.label+'" category? This cannot be undone.')){return;}
+                const updRooms=rooms.filter((_,i)=>i!==ri);
+                const hotelId=S.myHotel?.id;
+                if(hotelId){
+                  db.ref('hotels/'+hotelId).update({customRooms:updRooms}).then(()=>{
+                    toast(room.label+' deleted.');
+                  }).catch(e=>toast('Delete failed: '+e.message,'err'));
+                }
+              }
+            },ic('trash',13),'Delete')
+          ));
+        }
+
+        return card;
       })
     )
   );
   wrap.appendChild(roomStrip);
-
-  // Room detail panel
-  if(selRoom){
-    const room=rooms.find(r=>r.id===selRoom);
-    if(room){
-      const price=Math.round(h.price*room.mult);
-      const panel=el('div',{style:{margin:'10px 16px 0',background:'var(--card)',border:'2px solid var(--ac)',borderRadius:'14px',overflow:'hidden'}});
-      // Header
-      panel.appendChild(el('div',{style:{display:'flex',alignItems:'center',justifyContent:'space-between',padding:'12px 14px',background:'var(--acd)',borderBottom:'1px solid rgba(232,99,28,.15)'}},
-        el('div',{style:{display:'flex',alignItems:'center',gap:'10px'}},
-          el('span',{style:{fontSize:'24px'}},room.emoji),
-          el('div',{},
-            el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},room.label),
-            el('div',{style:{display:'flex',gap:'10px',marginTop:'2px'}},
-              el('span',{style:{fontSize:'10px',color:'var(--ink-s)'}},room.bedType),
-              el('span',{style:{fontSize:'10px',color:'var(--ink-s)'}},room.size),
-              el('span',{style:{fontSize:'10px',color:'var(--ink-s)'}},'Max '+room.maxGuests+' guests')
-            )
-          )
-        ),
-        el('div',{style:{textAlign:'right'}},
-          el('p',{style:{fontSize:'16px',fontWeight:'700',color:'var(--ink)'}},'₹'+price.toLocaleString('en-IN')),
-          el('p',{style:{fontSize:'9px',color:'var(--ink-f)'}},'per night')
-        )
-      ));
-      // Features
-      const featGrid=el('div',{style:{padding:'12px 14px'}},
-        el('p',{style:{fontSize:'9px',fontWeight:'700',textTransform:'uppercase',letterSpacing:'.06em',color:'var(--ink-f)',marginBottom:'8px'}},'What\'s Included'),
-        el('div',{style:{display:'grid',gridTemplateColumns:'1fr 1fr',gap:'6px'}},
-          ...room.features.map(f=>el('div',{style:{display:'flex',alignItems:'center',gap:'6px',fontSize:'11px',color:'var(--ink-s)'}},
-            el('div',{style:{width:'14px',height:'14px',borderRadius:'50%',background:'var(--gd)',display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}},
-              el('span',{style:{fontSize:'9px',color:'var(--good)'}},'✓')
-            ),
-            f
-          ))
-        )
-      );
-      panel.appendChild(featGrid);
-      // Edit note
-      panel.appendChild(el('div',{style:{padding:'0 14px 12px'}},
-        el('p',{style:{fontSize:'10px',color:'var(--ink-f)',background:'var(--pd)',padding:'8px 10px',borderRadius:'8px',lineHeight:'1.6'}},'💡 Room categories auto-generate based on your base price. Edit your hotel to update pricing.')
-      ));
-      wrap.appendChild(panel);
-    }
-  }
 
   // Hotel info section
   const info=el('div',{style:{padding:'14px 16px 0'}});
@@ -1837,29 +1839,63 @@ function renderHotelForm(){
       el('div',{},
         lbl('Hotel Photos (up to 20 images)'),
 
-        // Drop zone / click to upload
+        // Upload zone — separate hidden input + tap-friendly button
         (()=>{
-          const dz = el('div',{class:'img-drop-zone'},
-            // Hidden file input
-            el('input',{
-              type:'file', accept:'image/*', multiple:true,
-              onChange: e => { if(e.target.files?.length) handleImageFiles(e.target.files); }
-            }),
-            // Visual content
-            el('div',{style:{pointerEvents:'none'}},
-              el('div',{style:{fontSize:'32px',marginBottom:'8px'}},'📸'),
-              el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--aci)',marginBottom:'3px'}},'Tap to select photos from gallery'),
-              el('p',{style:{fontSize:'11px',color:'var(--ink-f)'}},'JPG, PNG, WEBP · Max 5MB each · Up to 20 photos')
-            )
+          // 1. Hidden native file input (appended to body so nothing overlaps it)
+          let fi = document.getElementById('hr-file-inp-main');
+          if(!fi){
+            fi = document.createElement('input');
+            fi.type = 'file';
+            fi.id = 'hr-file-inp-main';
+            fi.accept = 'image/jpeg,image/png,image/webp,image/gif';
+            fi.multiple = true;
+            fi.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;';
+            fi.addEventListener('change', function(){
+              if(fi.files && fi.files.length > 0){
+                handleImageFiles(fi.files);
+                setTimeout(()=>{ fi.value=''; }, 500);
+              }
+            });
+            document.body.appendChild(fi);
+          }
+
+          // 2. Visible tap button
+          const existing = (S.hf.images||[]).length;
+          const full = existing >= 20;
+          const zone = el('div',{
+            style:{
+              border:'2px dashed '+(full?'var(--line)':'var(--ac)'),
+              borderRadius:'16px',
+              background: full?'var(--pd)':'var(--acd)',
+              padding:'22px 16px',
+              textAlign:'center',
+              cursor: full?'default':'pointer',
+              userSelect:'none',
+              transition:'background .15s, border-color .15s',
+            }
+          },
+            el('div',{style:{fontSize:'30px',marginBottom:'8px'}},'📸'),
+            el('p',{style:{fontSize:'13px',fontWeight:'700',color:full?'var(--ink-f)':'var(--aci)',marginBottom:'4px'}},
+              full
+                ? '20/20 limit reached'
+                : (existing > 0 ? 'Add more photos ('+existing+'/20)' : 'Tap to open gallery & select photos')
+            ),
+            el('p',{style:{fontSize:'11px',color:'var(--ink-f)'}}, 'JPG · PNG · WEBP · Max 5MB each')
           );
-          // Drag events
-          dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
-          dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
-          dz.addEventListener('drop', e => {
-            e.preventDefault(); dz.classList.remove('drag');
-            if(e.dataTransfer.files?.length) handleImageFiles(e.dataTransfer.files);
-          });
-          return dz;
+
+          if(!full){
+            zone.addEventListener('click', function(e){
+              e.stopPropagation();
+              document.getElementById('hr-file-inp-main').click();
+            });
+            zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.style.background='color-mix(in srgb,var(--acd) 60%,var(--ac) 40%)'; });
+            zone.addEventListener('dragleave', ()=>{ zone.style.background='var(--acd)'; });
+            zone.addEventListener('drop', e=>{
+              e.preventDefault(); zone.style.background='var(--acd)';
+              if(e.dataTransfer.files?.length) handleImageFiles(e.dataTransfer.files);
+            });
+          }
+          return zone;
         })(),
 
         // Upload progress bar
@@ -2135,10 +2171,23 @@ function renderRoomEditor(){
 
   async function saveRooms(){
     const h = S.myHotel;
-    if(!h||!db) return;
-    await db.ref(`hotels/${h.id}`).update({customRooms: rooms});
-    set({showRoomEditor:false});
-    toast('Room categories saved!');
+    if(!h||!db){ toast('Hotel not found.','err'); return; }
+    const toSave = S.editingRooms;
+    if(!toSave||toSave.length===0){ toast('Add at least one room category.','err'); return; }
+    try{
+      await db.ref('hotels/'+h.id).update({customRooms: toSave});
+      set({showRoomEditor:false, roomEditorFocus:null});
+      toast('Room categories saved!');
+    } catch(e){
+      toast('Save failed: '+e.message,'err');
+    }
+  }
+  // Scroll to focused room after render
+  if(typeof S.roomEditorFocus === 'number'){
+    setTimeout(function(){
+      const cards = document.querySelectorAll('[data-room-idx]');
+      if(cards[S.roomEditorFocus]) cards[S.roomEditorFocus].scrollIntoView({behavior:'smooth',block:'center'});
+    }, 100);
   }
 
   const modal = el('div',{style:{position:'fixed',inset:0,background:'rgba(0,0,0,.6)',zIndex:60,display:'flex',alignItems:'flex-end',justifyContent:'center'}},
