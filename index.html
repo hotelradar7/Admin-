@@ -9,6 +9,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 :root{
@@ -177,6 +178,24 @@ input[type=color]{padding:2px;height:36px;border-radius:6px;cursor:pointer;}
 
 /* Section card */
 .sec-card{background:var(--card);border:1px solid var(--line);border-radius:var(--r2);padding:16px;margin-bottom:12px;}
+
+/* ── IMAGE UPLOAD SYSTEM ── */
+.img-drop-zone{border:2px dashed var(--ac);border-radius:var(--r2);background:var(--acd);padding:28px 16px;text-align:center;cursor:pointer;transition:all .15s;position:relative;}
+.img-drop-zone:hover,.img-drop-zone.drag{background:color-mix(in srgb,var(--acd) 80%,var(--ac) 20%);border-color:var(--aci);}
+.img-drop-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.img-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;margin-top:10px;}
+.img-thumb{position:relative;aspect-ratio:4/3;border-radius:10px;overflow:hidden;border:2px solid var(--line);background:var(--pd);}
+.img-thumb img{width:100%;height:100%;object-fit:cover;display:block;}
+.img-thumb .img-del{position:absolute;top:4px;right:4px;width:22px;height:22px;background:rgba(0,0,0,.65);color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;border:none;transition:background .1s;}
+.img-thumb .img-del:hover{background:rgba(220,38,38,.85);}
+.img-thumb .img-primary-badge{position:absolute;bottom:4px;left:4px;background:var(--ac);color:#fff;font-size:8px;font-weight:900;padding:1px 5px;border-radius:4px;text-transform:uppercase;}
+.img-thumb .img-set-primary{position:absolute;bottom:4px;right:4px;background:rgba(0,0,0,.6);color:#fff;font-size:8px;font-weight:700;padding:2px 5px;border-radius:4px;cursor:pointer;border:none;white-space:nowrap;}
+.img-thumb .img-set-primary:hover{background:var(--good);}
+.img-prog{height:4px;border-radius:2px;background:var(--line);overflow:hidden;margin-top:6px;}
+.img-prog-bar{height:100%;background:var(--ac);border-radius:2px;transition:width .2s ease;}
+.img-upload-btn{display:inline-flex;align-items:center;gap:7px;padding:10px 16px;background:var(--ac);color:#fff;border-radius:var(--r);font-size:12.5px;font-weight:700;cursor:pointer;border:none;transition:opacity .12s;}
+.img-upload-btn:hover{opacity:.9;}
+.img-upload-btn:disabled{opacity:.55;cursor:not-allowed;}
 </style>
 </head>
 <body>
@@ -208,6 +227,8 @@ let S={
   showRoomEditor:false,
   editingRooms:[],
   roomFeatureInput:'',
+  // gallery state
+  imgUploading:false,imgUploadProg:0,imgUploadErr:'',
   hfStep:1,
   // forms
   showHotelForm:false,editHotel:null,
@@ -236,9 +257,9 @@ let S={
   toast:null,
   hotelSearch:'',hotelFilter:'all',
 };
-function eH(){return{name:'',city:'',state:'',area:'',pin:'',phone:'',type:'hotel',price:'',rating:'4.5',reviewCount:'0',checkIn:'12:00 PM',checkOut:'11:00 AM',plan:'basic',emoji:'🏨',gradient:'linear-gradient(135deg,#E8631C,#F2A65A)',desc:'',amenities:[],badges:[],approved:false,active:true};}
+function eH(){return{name:'',city:'',state:'',area:'',pin:'',phone:'',type:'hotel',price:'',rating:'4.5',reviewCount:'0',checkIn:'12:00 PM',checkOut:'11:00 AM',plan:'basic',emoji:'🏨',gradient:'linear-gradient(135deg,#E8631C,#F2A65A)',desc:'',amenities:[],badges:[],images:[],imageUrl:'',approved:false,active:true};}
 // Input-only keys that should NOT trigger full re-render
-const INPUT_KEYS=['lEmail','lPass','lShowPass','shareEmail','hotelSearch','amenityInput'];
+const INPUT_KEYS=['lEmail','lPass','lShowPass','shareEmail','hotelSearch','amenityInput','imgUploadProg'];
 function set(p,skipRender){
   S={...S,...p};
   if(skipRender)return;
@@ -334,7 +355,7 @@ function loadHotelData(email,key,ad){
     const d=s.val();if(!d){set({myHotel:null,loading:false});return;}
     const all=Array.isArray(d)?d.filter(Boolean):Object.keys(d).map(k=>({...d[k],id:d[k].id||k}));
     const mine=all.find(h=>h.ownerEmail===email||h.id===ad.hotelId)||null;
-    set({myHotel:mine,loading:false,hf:mine?{...mine,price:String(mine.price||''),rating:String(mine.rating||'4.5'),reviewCount:String(mine.reviewCount||0)}:eH()});
+    set({myHotel:mine,loading:false,hf:mine?{...mine,price:String(mine.price||''),rating:String(mine.rating||'4.5'),reviewCount:String(mine.reviewCount||0),images:mine.images||[]}:eH()});
   });
   db.ref('bookings').on('value',s=>{
     const d=s.val();if(!d){set({myBookings:[]});return;}
@@ -394,7 +415,9 @@ async function saveHotel(){
   try{
     const existId=S.editHotel?.id||(IS_HOTEL?S.myAdmin?.hotelId:null);
     const id=existId||('h'+Date.now());
-    const h={...S.hf,id,price:Number(S.hf.price)||0,rating:Number(S.hf.rating)||4.5,reviewCount:Number(S.hf.reviewCount)||0,createdAt:existId?(S.editHotel?.createdAt||new Date().toISOString()):new Date().toISOString()};
+    // Build images array: merge gallery uploads + legacy imageUrl
+  const imgArr = S.hf.images && S.hf.images.length > 0 ? S.hf.images : (S.hf.imageUrl ? [{url:S.hf.imageUrl,primary:true}] : []);
+  const h={...S.hf,id,price:Number(S.hf.price)||0,rating:Number(S.hf.rating)||4.5,reviewCount:Number(S.hf.reviewCount)||0,images:imgArr,imageUrl:imgArr.find(i=>i.primary)?.url||S.hf.imageUrl||'',createdAt:existId?(S.editHotel?.createdAt||new Date().toISOString()):new Date().toISOString()};
     if(IS_HOTEL){
       h.ownerEmail=S.user.email;
       h.approved=false; // needs super admin approval
@@ -426,6 +449,96 @@ async function shareAdmin(){
   }catch(e){set({shareSaving:false,shareErr:e.message||'Failed.'});}
 }
 async function revokeAdmin(key){await db.ref(`sharedAdmins/${key}`).remove();toast('Access revoked.');}
+
+// ── IMAGE UPLOAD via Firebase Storage ──
+let _storage = null;
+function getStorage(){
+  if(_storage) return _storage;
+  try { _storage = firebase.storage(); } catch(e){ _storage = null; }
+  return _storage;
+}
+
+async function uploadImageFile(file){
+  // Validate
+  if(!file) return null;
+  if(!file.type.startsWith('image/')) { toast('Only image files allowed.','err'); return null; }
+  if(file.size > 5 * 1024 * 1024) { toast('Image must be under 5MB.','err'); return null; }
+
+  const storage = getStorage();
+  if(!storage){ toast('Storage not available. Refresh and try again.','err'); return null; }
+
+  const hotelId = S.editHotel?.id || S.myAdmin?.hotelId || ('h' + Date.now());
+  const ext = file.name.split('.').pop() || 'jpg';
+  const path = `hotelImages/${hotelId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+  const ref = storage.ref(path);
+
+  set({imgUploading:true, imgUploadProg:0, imgUploadErr:''});
+
+  return new Promise((resolve) => {
+    const task = ref.put(file);
+    task.on('state_changed',
+      snap => {
+        const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+        S.imgUploadProg = pct;
+        // update progress bar without full re-render
+        const bar = document.getElementById('hr-img-prog-bar');
+        if(bar) bar.style.width = pct + '%';
+      },
+      err => {
+        set({imgUploading:false, imgUploadErr: err.message || 'Upload failed'});
+        toast('Upload failed: ' + (err.message||''), 'err');
+        resolve(null);
+      },
+      async () => {
+        const url = await task.snapshot.ref.getDownloadURL();
+        set({imgUploading:false, imgUploadProg:100});
+        resolve(url);
+      }
+    );
+  });
+}
+
+async function handleImageFiles(files){
+  const existing = (S.hf.images || []).length;
+  const slots = Math.max(0, 20 - existing); // how many more we can add
+  if(slots === 0){ toast('Maximum 20 photos already added.','err'); return; }
+  const arr = Array.from(files).slice(0, slots); // respect total 20 limit
+  for(const file of arr){
+    const url = await uploadImageFile(file);
+    if(url){
+      const imgs = [...(S.hf.images || [])];
+      // First image becomes primary (imageUrl)
+      if(imgs.length === 0 && !S.hf.imageUrl){
+        S.hf.imageUrl = url;
+      }
+      imgs.push({ url, primary: imgs.length === 0 });
+      S.hf.images = imgs;
+    }
+  }
+  render();
+}
+
+function removeImage(idx){
+  const imgs = [...(S.hf.images || [])];
+  const wasPrimary = imgs[idx]?.primary;
+  imgs.splice(idx, 1);
+  // If we removed the primary, make first remaining primary
+  if(wasPrimary && imgs.length > 0){
+    imgs[0].primary = true;
+    S.hf.imageUrl = imgs[0].url;
+  } else if(imgs.length === 0){
+    S.hf.imageUrl = '';
+  }
+  S.hf.images = imgs;
+  render();
+}
+
+function setPrimaryImage(idx){
+  const imgs = (S.hf.images || []).map((img, i) => ({...img, primary: i === idx}));
+  S.hf.imageUrl = imgs[idx]?.url || '';
+  S.hf.images = imgs;
+  render();
+}
 async function markPaid(key){
   const expiry=new Date(Date.now()+30*864e5).toISOString(),now=new Date().toISOString();
   await db.ref(`sharedAdmins/${key}`).update({plan:'paid',planExpiry:expiry,lastPaid:now});
@@ -1602,8 +1715,14 @@ function renderHotelForm(){
   const step=S.hfStep||1;
 
   function livePreview(){
-    return el('div',{style:{margin:'0 0 14px',background:f.gradient||'linear-gradient(135deg,#1a1a2e,#0f3460)',borderRadius:'16px',overflow:'hidden'}},
-      el('div',{style:{height:'100px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'44px'}},f.emoji||'🏨'),
+    const coverImg=(f.images||[]).find(i=>i.primary)?.url||f.imageUrl||'';
+    return el('div',{style:{margin:'0 0 14px',background:f.gradient||'linear-gradient(135deg,#1a1a2e,#0f3460)',borderRadius:'16px',overflow:'hidden',position:'relative'}},
+      coverImg
+        ? el('div',{style:{height:'100px',position:'relative',overflow:'hidden'}},
+            el('img',{src:coverImg,style:{width:'100%',height:'100%',objectFit:'cover',display:'block'},loading:'lazy'}),
+            el('div',{style:{position:'absolute',inset:0,background:'linear-gradient(to bottom,transparent 40%,rgba(0,0,0,.5))'}})
+          )
+        : el('div',{style:{height:'100px',display:'flex',alignItems:'center',justifyContent:'center',fontSize:'44px',background:f.gradient||'linear-gradient(135deg,#1a1a2e,#0f3460)'}},f.emoji||'🏨'),
       el('div',{style:{padding:'10px 14px',background:'rgba(0,0,0,.35)'}},
         el('h3',{style:{color:'#fff',fontSize:'14px',fontWeight:'700',fontFamily:'Fraunces,serif'}},(f.name||'Your Hotel Name')),
         el('p',{style:{color:'rgba(255,255,255,.7)',fontSize:'11px',marginTop:'2px'}},(f.area?f.area+', ':'')+(f.city||'City')+', '+(f.state||'State')),
@@ -1714,29 +1833,89 @@ function renderHotelForm(){
           )
         )
       ),
-      // Image URL
+      // ── GALLERY IMAGE UPLOAD ──
       el('div',{},
-        lbl('Hotel Photo URL (optional)'),
-        el('div',{style:{display:'flex',gap:'8px',alignItems:'center'}},
-          el('input',{class:'inp',style:{flex:1},value:f.imageUrl||'',
-            placeholder:'Paste image URL or leave blank...',
-            onInput:e=>{S.hf.imageUrl=e.target.value;}}),
-          el('button',{
-            style:{width:'38px',height:'38px',flexShrink:0,display:'flex',alignItems:'center',justifyContent:'center',background:'var(--acd)',border:'2px dashed var(--ac)',borderRadius:'8px',cursor:'pointer'},
-            title:'Add image URL',
-            onClick:()=>{
-              const url=prompt('Paste your hotel image URL:');
-              if(url){S.hf.imageUrl=url;render();}
+        lbl('Hotel Photos (up to 20 images)'),
+
+        // Drop zone / click to upload
+        (()=>{
+          const dz = el('div',{class:'img-drop-zone'},
+            // Hidden file input
+            el('input',{
+              type:'file', accept:'image/*', multiple:true,
+              onChange: e => { if(e.target.files?.length) handleImageFiles(e.target.files); }
+            }),
+            // Visual content
+            el('div',{style:{pointerEvents:'none'}},
+              el('div',{style:{fontSize:'32px',marginBottom:'8px'}},'📸'),
+              el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--aci)',marginBottom:'3px'}},'Tap to select photos from gallery'),
+              el('p',{style:{fontSize:'11px',color:'var(--ink-f)'}},'JPG, PNG, WEBP · Max 5MB each · Up to 20 photos')
+            )
+          );
+          // Drag events
+          dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag'); });
+          dz.addEventListener('dragleave', () => dz.classList.remove('drag'));
+          dz.addEventListener('drop', e => {
+            e.preventDefault(); dz.classList.remove('drag');
+            if(e.dataTransfer.files?.length) handleImageFiles(e.dataTransfer.files);
+          });
+          return dz;
+        })(),
+
+        // Upload progress bar
+        S.imgUploading ? el('div',{style:{marginTop:'8px'}},
+          el('div',{style:{display:'flex',justifyContent:'space-between',marginBottom:'4px'}},
+            el('span',{style:{fontSize:'11px',fontWeight:'700',color:'var(--ink-s)'}},'Uploading...'),
+            el('span',{style:{fontSize:'11px',color:'var(--ac)',fontWeight:'700'}},S.imgUploadProg+'%')
+          ),
+          el('div',{class:'img-prog'},
+            el('div',{class:'img-prog-bar',id:'hr-img-prog-bar',style:{width:(S.imgUploadProg||0)+'%'}})
+          )
+        ) : null,
+
+        // Error
+        S.imgUploadErr ? el('p',{style:{fontSize:'11px',color:'#DC2626',marginTop:'4px',fontWeight:'600'}}, '⚠ '+S.imgUploadErr) : null,
+
+        // Image grid
+        (S.hf.images||[]).length > 0 ? el('div',{},
+          el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',margin:'10px 0 6px',textTransform:'uppercase',letterSpacing:'.06em'}},
+            (S.hf.images||[]).length+' photo'+ ((S.hf.images||[]).length>1?'s':'')+' added · Tap ★ to set cover'
+          ),
+          el('div',{class:'img-grid'},
+            ...(S.hf.images||[]).map((img,idx) =>
+              el('div',{class:'img-thumb'},
+                el('img',{src:img.url, alt:'Hotel photo '+( idx+1), loading:'lazy'}),
+                // Delete button
+                el('button',{class:'img-del', title:'Remove', onClick:()=>removeImage(idx)}, ic('x',10)),
+                // Primary badge or "set as cover" button
+                img.primary
+                  ? el('div',{class:'img-primary-badge'},'Cover')
+                  : el('button',{class:'img-set-primary', title:'Set as cover photo', onClick:()=>setPrimaryImage(idx)},'★ Cover')
+              )
+            )
+          )
+        ) : null,
+
+        // Fallback URL input (for pasting external links)
+        el('div',{style:{marginTop:'10px',display:'flex',alignItems:'center',gap:'8px'}},
+          el('span',{style:{fontSize:'11px',color:'var(--ink-f)',fontWeight:'600',whiteSpace:'nowrap'}},'Or paste URL:'),
+          el('input',{class:'inp',style:{flex:1,fontSize:'12px'},
+            value: (S.hf.images||[]).length > 0 ? '' : (f.imageUrl||''),
+            placeholder:'https://example.com/photo.jpg',
+            onInput: e => { S.hf.imageUrl = e.target.value; },
+            onBlur: e => {
+              const url = e.target.value.trim();
+              if(url && url.startsWith('http')){
+                const imgs = [...(S.hf.images||[])];
+                imgs.push({url, primary: imgs.length===0});
+                if(imgs.length===1) S.hf.imageUrl = url;
+                S.hf.images = imgs;
+                e.target.value = '';
+                render();
+              }
             }
-          },ic('plus',16)),
-        ),
-        f.imageUrl?el('div',{style:{marginTop:'8px',borderRadius:'10px',overflow:'hidden',height:'80px',position:'relative'}},
-          el('img',{src:f.imageUrl,style:{width:'100%',height:'100%',objectFit:'cover'},onerror:()=>{}}),
-          el('button',{
-            style:{position:'absolute',top:'4px',right:'4px',background:'rgba(0,0,0,.6)',color:'#fff',borderRadius:'50%',width:'22px',height:'22px',display:'flex',alignItems:'center',justifyContent:'center'},
-            onClick:()=>{S.hf.imageUrl='';render();}
-          },ic('x',11))
-        ):el('p',{style:{fontSize:'10px',color:'var(--ink-f)',marginTop:'4px'}},'Tip: Upload photo to Google Photos/Drive and paste the link here')
+          })
+        )
       ),
       el('div',{},
         lbl('Card Background Theme'),
