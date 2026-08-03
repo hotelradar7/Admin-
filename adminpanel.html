@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <title>HotelRadar — Admin Panel</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📡</text></svg>"/>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700;900&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-storage-compat.js"></script>
+
+  <!-- All styles in one CSS file -->
+  <link rel="stylesheet" href="admin-styles.css"/>
+</head>
+<body>
+
+  <!--
+    ┌─────────────────────────────────────────────────┐
+    │  LOAD ORDER (must be exactly this sequence)     │
+    │                                                 │
+    │  1. config.js        — API keys & emails        │
+    │  2. admin-core.js    — State, Firebase, utils   │
+    │  3. admin-shell.js   — Login, sidebar, nav      │
+    │  4. admin-super.js   — Super admin sections     │
+    │  5. admin-hotel-owner.js — Hotel owner sections │
+    │  6. admin-hotel-form.js  — Add/Edit hotel form  │
+    │  7. admin-modals.js  — Modals + main render()   │
+    └─────────────────────────────────────────────────┘
+  -->
+
+  <script src="config.js"></script>
+  <script src="admin-core.js"></script>
+  <script src="admin-shell.js"></script>
+  <script src="admin-super.js"></script>
+  <script src="admin-hotel-owner.js"></script>
+  <script src="admin-hotel-form.js"></script>
+  <script src="admin-modals.js"></script>
+
+</body>
+</html>
