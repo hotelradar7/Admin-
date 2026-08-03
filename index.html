@@ -466,9 +466,13 @@ async function uploadImageFile(file){
   if(file.size > 5 * 1024 * 1024) { toast('Image must be under 5MB.','err'); return null; }
 
   const storage = getStorage();
-  if(!storage){ toast('Storage not available. Refresh and try again.','err'); return null; }
+  if(!storage){
+    toast('Firebase Storage not ready. Check your internet connection and refresh.','err');
+    console.error('Firebase Storage init failed. Check storageBucket config and Storage Rules.');
+    return null;
+  }
 
-  const hotelId = S.editHotel?.id || S.myAdmin?.hotelId || ('h' + Date.now());
+  const hotelId = S.myHotel?.id || S.editHotel?.id || S.myAdmin?.hotelId || S.hf?.id || ('h' + Date.now());
   const ext = file.name.split('.').pop() || 'jpg';
   const path = `hotelImages/${hotelId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
   const ref = storage.ref(path);
@@ -501,22 +505,24 @@ async function uploadImageFile(file){
 
 async function handleImageFiles(files){
   const existing = (S.hf.images || []).length;
-  const slots = Math.max(0, 20 - existing); // how many more we can add
+  const slots = Math.max(0, 20 - existing);
   if(slots === 0){ toast('Maximum 20 photos already added.','err'); return; }
-  const arr = Array.from(files).slice(0, slots); // respect total 20 limit
+  const arr = Array.from(files).slice(0, slots);
+  let uploaded = 0;
   for(const file of arr){
+    toast('Uploading '+(uploaded+1)+' of '+arr.length+'...','');
     const url = await uploadImageFile(file);
     if(url){
-      const imgs = [...(S.hf.images || [])];
-      // First image becomes primary (imageUrl)
-      if(imgs.length === 0 && !S.hf.imageUrl){
-        S.hf.imageUrl = url;
-      }
-      imgs.push({ url, primary: imgs.length === 0 });
-      S.hf.images = imgs;
+      if(!S.hf.images) S.hf.images = [];
+      const isPrimary = S.hf.images.length === 0;
+      S.hf.images = [...S.hf.images, { url: url, primary: isPrimary }];
+      if(isPrimary){ S.hf.imageUrl = url; }
+      uploaded++;
+      render(); // re-render after each upload so user sees progress
     }
   }
-  render();
+  if(uploaded > 0) toast(uploaded+' photo'+(uploaded>1?'s':'')+' uploaded successfully!');
+  else toast('Upload failed. Check Firebase Storage rules.','err');
 }
 
 function removeImage(idx){
@@ -1343,21 +1349,28 @@ const DEMO_HOTEL = {
 
 // Room categories for preview
 function getDemoRooms(basePrice, customRooms){
-  const base = [
-    {id:'cat1',label:'Category 1',emoji:'🛏️',tag:'Best Value',tagColor:'good',mult:1,maxGuests:2,bedType:'Double Bed',size:'180 sq ft',features:['AC','TV','WiFi','Hot Water','Daily Housekeeping']},
-    {id:'cat2',label:'Category 2',emoji:'✨',tag:'Most Popular',tagColor:'accent',mult:1.5,maxGuests:2,bedType:'King Bed',size:'240 sq ft',features:['AC','Smart TV','WiFi','Mini Fridge','City View','Room Service']},
-    {id:'cat3',label:'Category 3',emoji:'🌟',tag:'Premium',tagColor:'accent',mult:2,maxGuests:3,bedType:'Super King',size:'300 sq ft',features:['AC','Smart TV','WiFi','Mini Bar','Balcony','Bathtub','24/7 Service']},
-  ];
-  if(customRooms && customRooms.length>0){
-    // merge: keep base labels but override with custom data
-    return base.map((r,i)=>({
-      ...r,
-      ...(customRooms[i]||{}),
-      id: r.id,
-      label: r.label,
+  // If hotel owner has saved custom rooms, use EXACTLY those — no merging
+  if(customRooms && customRooms.length > 0){
+    return customRooms.map((r, i) => ({
+      // defaults in case some fields are missing
+      id: r.id || ('cat'+(i+1)),
+      label: r.label || ('Category '+(i+1)),
+      emoji: r.emoji || '🛏️',
+      tag: r.tag || 'Standard',
+      tagColor: r.tagColor || 'good',
+      mult: Number(r.mult) || 1,
+      maxGuests: Number(r.maxGuests) || 2,
+      bedType: r.bedType || 'Double Bed',
+      size: r.size || '200 sq ft',
+      features: Array.isArray(r.features) ? r.features : [],
     }));
   }
-  return base;
+  // Fallback defaults (shown when no custom rooms set)
+  return [
+    {id:'cat1',label:'Standard Room',emoji:'🛏️',tag:'Best Value',tagColor:'good',mult:1,maxGuests:2,bedType:'Double Bed',size:'180 sq ft',features:['AC','TV','WiFi','Hot Water','Daily Housekeeping']},
+    {id:'cat2',label:'Deluxe Room',emoji:'✨',tag:'Most Popular',tagColor:'accent',mult:1.5,maxGuests:2,bedType:'King Bed',size:'240 sq ft',features:['AC','Smart TV','WiFi','Mini Fridge','City View','Room Service']},
+    {id:'cat3',label:'Premium Room',emoji:'🌟',tag:'Premium',tagColor:'accent',mult:2,maxGuests:3,bedType:'Super King',size:'300 sq ft',features:['AC','Smart TV','WiFi','Mini Bar','Balcony','Bathtub','24/7 Service']},
+  ];
 }
 
 function renderDashH(){
@@ -1839,63 +1852,59 @@ function renderHotelForm(){
       el('div',{},
         lbl('Hotel Photos (up to 20 images)'),
 
-        // Upload zone — separate hidden input + tap-friendly button
+        // Upload zone — label wrapping file input (most reliable cross-browser/mobile)
         (()=>{
-          // 1. Hidden native file input (appended to body so nothing overlaps it)
-          let fi = document.getElementById('hr-file-inp-main');
-          if(!fi){
-            fi = document.createElement('input');
-            fi.type = 'file';
-            fi.id = 'hr-file-inp-main';
-            fi.accept = 'image/jpeg,image/png,image/webp,image/gif';
-            fi.multiple = true;
-            fi.style.cssText = 'position:fixed;left:-9999px;top:-9999px;opacity:0;width:1px;height:1px;';
-            fi.addEventListener('change', function(){
-              if(fi.files && fi.files.length > 0){
-                handleImageFiles(fi.files);
-                setTimeout(()=>{ fi.value=''; }, 500);
-              }
-            });
-            document.body.appendChild(fi);
-          }
-
-          // 2. Visible tap button
           const existing = (S.hf.images||[]).length;
           const full = existing >= 20;
-          const zone = el('div',{
+          const uid = 'hr-img-' + Date.now();
+
+          // Native file input — inside label for maximum compatibility
+          const inp = el('input',{
+            type:'file', id: uid,
+            accept:'image/jpeg,image/png,image/webp,image/gif',
+            multiple: true,
+            style:{position:'absolute',width:'1px',height:'1px',opacity:'0',overflow:'hidden',zIndex:'-1'}
+          });
+          inp.addEventListener('change', function(e){
+            if(e.target.files && e.target.files.length > 0){
+              handleImageFiles(e.target.files);
+              setTimeout(function(){ try{ inp.value=''; }catch(ex){} }, 300);
+            }
+          });
+
+          // Label acts as the click target — clicking label opens file picker natively
+          const lbl = el('label',{
+            for: uid,
             style:{
+              display:'block',
               border:'2px dashed '+(full?'var(--line)':'var(--ac)'),
               borderRadius:'16px',
               background: full?'var(--pd)':'var(--acd)',
               padding:'22px 16px',
               textAlign:'center',
-              cursor: full?'default':'pointer',
+              cursor: full?'not-allowed':'pointer',
               userSelect:'none',
               transition:'background .15s, border-color .15s',
             }
           },
-            el('div',{style:{fontSize:'30px',marginBottom:'8px'}},'📸'),
-            el('p',{style:{fontSize:'13px',fontWeight:'700',color:full?'var(--ink-f)':'var(--aci)',marginBottom:'4px'}},
-              full
-                ? '20/20 limit reached'
-                : (existing > 0 ? 'Add more photos ('+existing+'/20)' : 'Tap to open gallery & select photos')
+            inp,
+            el('div',{style:{fontSize:'30px',marginBottom:'8px',pointerEvents:'none'}},'📸'),
+            el('p',{style:{fontSize:'13px',fontWeight:'700',color:full?'var(--ink-f)':'var(--aci)',marginBottom:'4px',pointerEvents:'none'}},
+              full ? '20/20 limit reached'
+                : (existing > 0 ? 'Tap to add more photos ('+existing+'/20)' : 'Tap to open gallery')
             ),
-            el('p',{style:{fontSize:'11px',color:'var(--ink-f)'}}, 'JPG · PNG · WEBP · Max 5MB each')
+            el('p',{style:{fontSize:'11px',color:'var(--ink-f)',pointerEvents:'none'}}, 'JPG · PNG · WEBP · Max 5MB each')
           );
 
           if(!full){
-            zone.addEventListener('click', function(e){
-              e.stopPropagation();
-              document.getElementById('hr-file-inp-main').click();
-            });
-            zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.style.background='color-mix(in srgb,var(--acd) 60%,var(--ac) 40%)'; });
-            zone.addEventListener('dragleave', ()=>{ zone.style.background='var(--acd)'; });
-            zone.addEventListener('drop', e=>{
-              e.preventDefault(); zone.style.background='var(--acd)';
-              if(e.dataTransfer.files?.length) handleImageFiles(e.dataTransfer.files);
+            lbl.addEventListener('dragover', function(e){ e.preventDefault(); lbl.style.background='color-mix(in srgb,var(--acd) 60%,var(--ac) 40%)'; });
+            lbl.addEventListener('dragleave', function(){ lbl.style.background='var(--acd)'; });
+            lbl.addEventListener('drop', function(e){
+              e.preventDefault(); lbl.style.background='var(--acd)';
+              if(e.dataTransfer.files&&e.dataTransfer.files.length) handleImageFiles(e.dataTransfer.files);
             });
           }
-          return zone;
+          return lbl;
         })(),
 
         // Upload progress bar
@@ -2207,14 +2216,59 @@ function renderRoomEditor(){
           const EMOJIS=['🛏️','✨','🌟','👑','🏡','🌊','🔑','💎'];
           const FEATURES_LIST=['AC','WiFi','TV','Hot Water','Mini Fridge','Mini Bar','Balcony','Bathtub','City View','Mountain View','Room Service','24/7 Service','Butler','Jacuzzi','King Bed','Super King','Sofa Bed','Extra Bed'];
 
-          return el('div',{style:{background:'var(--pd)',borderRadius:'12px',padding:'14px',border:'1px solid var(--line)'}},
+          return el('div',{'data-room-card':'1',style:{background:'var(--pd)',borderRadius:'12px',padding:'14px',border:'1px solid var(--line)',position:'relative'}},
             // Room header
             el('div',{style:{display:'flex',alignItems:'center',gap:'10px',marginBottom:'12px'}},
               el('span',{style:{fontSize:'22px'}},room.emoji||'🛏️'),
-              el('div',{},
-                el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},'Category '+(ri+1)),
+              el('div',{style:{flex:1}},
+                el('p',{style:{fontSize:'13px',fontWeight:'700',color:'var(--ink)'}},room.label||('Category '+(ri+1))),
                 el('p',{style:{fontSize:'10px',color:'var(--ink-f)'}},'Price multiplier: x'+room.mult)
+              ),
+              // Delete this room button
+              S.editingRooms.length > 1 ? el('button',{
+                style:{width:'28px',height:'28px',display:'flex',alignItems:'center',justifyContent:'center',
+                       background:'#FEF2F2',border:'1px solid #FECACA',borderRadius:'8px',
+                       color:'#DC2626',cursor:'pointer',flexShrink:0},
+                title:'Remove this room category',
+                onClick:()=>{
+                  if(!confirm('Remove "'+(room.label||'this category')+'"?')) return;
+                  S.editingRooms = S.editingRooms.filter((_,i)=>i!==ri);
+                  render();
+                }
+              }, ic('trash',13)) : null
+            ),
+
+            // Room Label input
+            el('div',{style:{marginBottom:'10px'}},
+              el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'5px'}},'ROOM NAME'),
+              el('input',{class:'inp',value:room.label||'',placeholder:'e.g. Deluxe Room',
+                style:{width:'100%',fontSize:'13px'},
+                onInput:e=>{S.editingRooms[ri].label=e.target.value;/* no re-render needed */}
+              })
+            ),
+
+            // Price Multiplier
+            el('div',{style:{marginBottom:'10px'}},
+              el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'5px'}},'PRICE MULTIPLIER (base price × this)'),
+              el('div',{style:{display:'flex',gap:'6px',flexWrap:'wrap'}},
+                [0.5,0.75,1,1.25,1.5,2,2.5,3].map(m=>
+                  el('button',{
+                    style:{padding:'4px 12px',borderRadius:'8px',fontSize:'12px',fontWeight:'700',
+                           border:'2px solid '+(room.mult===m?'var(--ac)':'var(--line)'),
+                           background:room.mult===m?'var(--acd)':'var(--card)',cursor:'pointer'},
+                    onClick:()=>{S.editingRooms[ri].mult=m;render();}
+                  },'×'+m)
+                )
               )
+            ),
+
+            // Tag / badge text
+            el('div',{style:{marginBottom:'10px'}},
+              el('p',{style:{fontSize:'10px',fontWeight:'700',color:'var(--ink-f)',marginBottom:'5px'}},'BADGE LABEL'),
+              el('input',{class:'inp',value:room.tag||'',placeholder:'e.g. Best Value',
+                style:{width:'100%',fontSize:'13px'},
+                onInput:e=>{S.editingRooms[ri].tag=e.target.value;}
+              })
             ),
 
             // Emoji picker
@@ -2299,10 +2353,42 @@ function renderRoomEditor(){
           );
         })
       ),
-      // Footer
-      el('div',{style:{padding:'12px 16px',borderTop:'1px solid var(--line)',flexShrink:0,display:'flex',gap:'10px'}},
-        el('button',{class:'btn bo',style:{flex:1,justifyContent:'center'},onClick:()=>set({showRoomEditor:false})},'Cancel'),
-        el('button',{class:'btn ba',style:{flex:2,justifyContent:'center'},onClick:saveRooms},ic('save',13),'Save Room Categories')
+      // Footer — Add Room + Save
+      el('div',{style:{padding:'12px 16px',borderTop:'1px solid var(--line)',flexShrink:0}},
+        // Add new room button
+        el('button',{
+          style:{width:'100%',display:'flex',alignItems:'center',justifyContent:'center',gap:'6px',
+                 padding:'9px',marginBottom:'10px',
+                 background:'var(--pd)',border:'2px dashed var(--ac)',borderRadius:'10px',
+                 color:'var(--aci)',fontWeight:'700',fontSize:'12px',cursor:'pointer'},
+          onClick:()=>{
+            const newRoom = {
+              id:'cat'+(S.editingRooms.length+1)+'_'+Date.now(),
+              label:'New Category '+(S.editingRooms.length+1),
+              emoji:'🛏️',
+              tag:'Standard',
+              tagColor:'good',
+              mult: 1,
+              maxGuests: 2,
+              bedType:'Double Bed',
+              size:'200 sq ft',
+              features:['AC','WiFi','Hot Water'],
+            };
+            S.editingRooms = [...S.editingRooms, newRoom];
+            render();
+            // scroll to new room after render
+            setTimeout(()=>{
+              const cards = document.querySelectorAll('[data-room-card]');
+              if(cards.length) cards[cards.length-1].scrollIntoView({behavior:'smooth',block:'center'});
+            }, 100);
+          }
+        }, ic('plus',14), 'Add New Room Category'),
+
+        // Save / Cancel row
+        el('div',{style:{display:'flex',gap:'10px'}},
+          el('button',{class:'btn bo',style:{flex:1,justifyContent:'center'},onClick:()=>set({showRoomEditor:false})},'Cancel'),
+          el('button',{class:'btn ba',style:{flex:2,justifyContent:'center'},onClick:saveRooms},ic('save',13),'Save All ('+S.editingRooms.length+')')
+        )
       )
     )
   );
