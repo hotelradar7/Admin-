@@ -1,8 +1,9 @@
-// ============================================================
+// ================================================================
 // config.js — HotelRadar Admin Panel
-// ONLY file you need to edit when changing Firebase project.
-// Keep this file PRIVATE — do not commit to public repos.
-// ============================================================
+// Firebase API keys aur super admin email yahan hain.
+// Sirf yeh file edit karni hai nayi Firebase project ke liye.
+// GitHub pe PRIVATE repo mein rakhein.
+// ================================================================
 
 const FIREBASE_CONFIG = {
   apiKey:            "AIzaSyDoBNdJEAos6Ofj-KDzvarg_mH1Nz3nQls",
@@ -14,9 +15,5 @@ const FIREBASE_CONFIG = {
   appId:             "1:492786665399:web:7033614463c044cf4fadfa"
 };
 
-// Super admin email — only this account gets full access
+// Super admin — full access
 const SUPER_EMAIL = "aryakaran836@gmail.com";
-
-// Hotel owner email — set this when deploying for a specific hotel owner
-// Leave blank ("") for the generic admin panel login page
-const HOTEL_EMAIL = "";

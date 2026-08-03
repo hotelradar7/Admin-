@@ -1,17 +1,18 @@
-// ============================================================
+// ================================================================
 // admin-core.js — HotelRadar Admin Panel
-// State, Firebase init, data load/save, helper utilities
-// Depends on: config.js
-// ============================================================
+// State management, Firebase init, data load/save,
+// image upload, helper functions (el, ic, toast, set)
+// Depends on: config.js (pehle load hona chahiye)
+// ================================================================
 
 // ══════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════
-// FB config and SUPER_EMAIL loaded from config.js
+// config.js se load hota hai
 const FB = FIREBASE_CONFIG;
 const AMENITIES=["AC","WiFi","Restaurant","Parking","Pool","Gym","Spa","Ganga View","Mountain View","Room Service","Laundry","Couple Friendly","Family Friendly","Hot Water","TV","Mini Bar","Balcony","Garden","Airport Shuttle","24/7 Reception"];
 const URL_P=new URLSearchParams(location.search);
-const HOTEL_EMAIL = URL_P.get('admin'); // hotel owner's email from URL param ?admin=email
+const HOTEL_EMAIL=URL_P.get('admin');
 const IS_HOTEL=!!HOTEL_EMAIL;
 
 // ══════════════════════════════════════════
@@ -258,80 +259,50 @@ async function revokeAdmin(key){await db.ref(`sharedAdmins/${key}`).remove();toa
 // ── IMAGE UPLOAD via Firebase Storage ──
 async function uploadImageFile(file){
   if(!file) return null;
-
-  // Validate type
   if(!file.type.startsWith('image/')){
     toast('Sirf image files allowed (JPG/PNG/WEBP).','err');
     return null;
   }
-  // Validate size
   if(file.size > 5 * 1024 * 1024){
     toast('Image 5MB se choti honi chahiye.','err');
     return null;
   }
-
-  // Init storage fresh every time (most reliable)
   let storage;
-  try {
-    storage = firebase.storage();
-  } catch(e) {
-    toast('Firebase Storage unavailable: ' + e.message,'err');
-    console.error('Storage init error:', e);
+  try { storage = firebase.storage(); } catch(e){
+    toast('Firebase Storage unavailable: '+e.message,'err');
     return null;
   }
-
-  const hotelId = (S.myHotel && S.myHotel.id)
-    || (S.editHotel && S.editHotel.id)
-    || (S.myAdmin && S.myAdmin.hotelId)
-    || (S.hf && S.hf.id)
-    || ('hotel_' + Date.now());
-
-  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-  const fileName = Date.now() + '_' + Math.random().toString(36).substr(2,8) + '.' + ext;
-  const storagePath = 'hotelImages/' + hotelId + '/' + fileName;
-
-  set({imgUploading:true, imgUploadProg:0, imgUploadErr:''});
-
+  const hotelId=(S.myHotel&&S.myHotel.id)||(S.editHotel&&S.editHotel.id)||(S.myAdmin&&S.myAdmin.hotelId)||(S.hf&&S.hf.id)||('hotel_'+Date.now());
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+  const fileName=Date.now()+'_'+Math.random().toString(36).substr(2,8)+'.'+ext;
+  const storagePath='hotelImages/'+hotelId+'/'+fileName;
+  set({imgUploading:true,imgUploadProg:0,imgUploadErr:''});
   return new Promise(function(resolve){
-    var storageRef = storage.ref(storagePath);
-    var uploadTask = storageRef.put(file, { contentType: file.type });
-
-    uploadTask.on(
-      firebase.storage.TaskEvent.STATE_CHANGED,
-      // Progress
-      function(snapshot){
-        var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-        S.imgUploadProg = pct;
-        var bar = document.getElementById('hr-img-prog-bar');
-        if(bar) bar.style.width = pct + '%';
-        var pctEl = document.getElementById('hr-img-prog-pct');
-        if(pctEl) pctEl.textContent = pct + '%';
+    var storageRef=storage.ref(storagePath);
+    var uploadTask=storageRef.put(file,{contentType:file.type});
+    uploadTask.on(firebase.storage.TaskEvent.STATE_CHANGED,
+      function(snap){
+        var pct=Math.round((snap.bytesTransferred/snap.totalBytes)*100);
+        S.imgUploadProg=pct;
+        var bar=document.getElementById('hr-img-prog-bar');
+        if(bar)bar.style.width=pct+'%';
+        var pctEl=document.getElementById('hr-img-prog-pct');
+        if(pctEl)pctEl.textContent=pct+'%';
       },
-      // Error
       function(error){
-        var msg = error.message || 'Upload failed';
-        set({imgUploading:false, imgUploadErr:msg});
-        console.error('Upload error:', error.code, error.message);
-        // Specific helpful messages
-        if(error.code === 'storage/unauthorized'){
-          toast('Storage permission denied — check Firebase Storage Rules.','err');
-        } else if(error.code === 'storage/canceled'){
-          toast('Upload cancelled.','err');
-        } else if(error.code === 'storage/unknown'){
-          toast('Network error — check internet and try again.','err');
-        } else {
-          toast('Upload failed: ' + msg,'err');
-        }
+        set({imgUploading:false,imgUploadErr:error.message||'Upload failed'});
+        if(error.code==='storage/unauthorized') toast('Storage permission denied — Firebase Storage Rules check karo.','err');
+        else if(error.code==='storage/unknown') toast('Network error — internet check karo.','err');
+        else toast('Upload failed: '+(error.message||''),'err');
         resolve(null);
       },
-      // Success
       function(){
         uploadTask.snapshot.ref.getDownloadURL().then(function(url){
-          set({imgUploading:false, imgUploadProg:100});
+          set({imgUploading:false,imgUploadProg:100});
           resolve(url);
         }).catch(function(e){
-          set({imgUploading:false, imgUploadErr: e.message});
-          toast('Could not get image URL: ' + e.message,'err');
+          set({imgUploading:false,imgUploadErr:e.message});
+          toast('Image URL nahi mili: '+e.message,'err');
           resolve(null);
         });
       }

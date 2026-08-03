@@ -1,37 +1,11 @@
-// ============================================================
+// ================================================================
 // admin-hotel-owner.js — HotelRadar Admin Panel
-// Hotel Owner sections: Dashboard, Hotel Page, Room
-// Categories, Bookings, Reviews, Plan, Settings
+// Hotel Owner ke saare tabs:
+// My Plan, Demo Hotel, Dashboard, Hotel Page,
+// Room Categories, Bookings, Reviews, Plan, Settings
 // Depends on: config.js, admin-core.js
-// ============================================================
+// ================================================================
 
-function renderActivityS(){
-  const logs=[
-    ...S.payments.map(p=>({t:p.date,msg:'Payment ₹'+p.amount+' from '+p.adminEmail,c:'var(--good)'})),
-    ...S.sharedAdmins.map(a=>({t:a.addedAt,msg:'Access shared to '+a.email,c:'var(--blue)'})),
-    ...S.hotels.map(h=>({t:h.createdAt,msg:'Hotel added: '+h.name+' ('+h.city+')',c:'var(--ac)'})),
-    ...S.bookings.map(b=>({t:b.createdAt,msg:'Booking: '+(b.name||'Guest')+' → '+(b.hotelName||b.hotelId||'hotel'),c:'var(--pur)'})),
-  ].sort((a,b)=>new Date(b.t||0)-new Date(a.t||0));
-  return el('div',{class:'content fi'},
-    el('div',{class:'card',style:{padding:'16px'}},
-      el('h3',{style:{fontSize:'13px',color:'var(--ink)',marginBottom:'12px'}},'Activity Log ('+logs.length+' events)'),
-      logs.length===0?el('p',{style:{textAlign:'center',color:'var(--ink-f)',padding:'32px',fontSize:'12px'}},'No activity yet'):
-      el('div',{},logs.slice(0,60).map((l,i)=>
-        el('div',{style:{display:'flex',gap:'10px',padding:'8px 0',borderBottom:i<logs.length-1?'1px solid var(--line)':'none'}},
-          el('div',{style:{width:'7px',height:'7px',borderRadius:'50%',background:l.c,marginTop:'5px',flexShrink:0}}),
-          el('div',{style:{flex:1}},
-            el('p',{style:{fontSize:'12px',fontWeight:'600',color:'var(--ink)'}},l.msg),
-            el('p',{style:{fontSize:'10px',color:'var(--ink-f)',marginTop:'1px'}},fmtT(l.t))
-          )
-        )
-      ))
-    )
-  );
-}
-
-// ══════════════════════════════════════════
-// HOTEL ADMIN TABS
-// ══════════════════════════════════════════
 function getMyPlan(){
   const a=S.myAdmin;if(!a)return{st:'none',label:'No Plan',days:0};
   if(!a.planExpiry)return{st:'free',label:'Free Trial',days:30};

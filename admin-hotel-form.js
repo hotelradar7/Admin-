@@ -1,9 +1,11 @@
-// ============================================================
+// ================================================================
 // admin-hotel-form.js — HotelRadar Admin Panel
-// Hotel Add/Edit Form — Step 1 (Basic Info),
-// Step 2 (Amenities & Badges), Step 3 (Look & Photos)
+// Hotel Add/Edit Form — 3 steps:
+// Step 1: Basic Info (name, city, phone, price...)
+// Step 2: Amenities & Badges
+// Step 3: Photos & Appearance (image upload)
 // Depends on: config.js, admin-core.js
-// ============================================================
+// ================================================================
 
 function renderHotelForm(){
   const f=S.hf;

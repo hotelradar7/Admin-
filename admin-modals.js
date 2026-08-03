@@ -1,11 +1,12 @@
-// ============================================================
+// ================================================================
 // admin-modals.js — HotelRadar Admin Panel
-// Modals: Share, Payment, Confirm, Toast
+// Modals: Share Access, Payment, Confirm Delete, Toast
 // Room Editor Modal
 // Welcome Animation
-// Main render() function — entry point
-// Depends on: ALL other JS files
-// ============================================================
+// Main render() function — sab kuch yahan se start hota hai
+// window.load event — entry point
+// Depends on: config.js + SAARI baaki files
+// ================================================================
 
 function renderShareModal(){
   return el('div',{class:'ov',style:{alignItems:'center'},onClick:e=>e.target.classList.contains('ov')&&set({showShare:false})},
