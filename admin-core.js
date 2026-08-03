@@ -40,6 +40,7 @@ let S={
   showShare:false,shareEmail:'',shareErr:'',shareSaving:false,genLink:'',
   showPayment:false,payOpt:'monthly',
   delId:null,delType:'',
+  approvedLink:'',approvedReq:null,
   // website settings
   siteSettings:{
     heroTitle:'Find Your Perfect Stay',
@@ -255,52 +256,84 @@ async function shareAdmin(){
 async function revokeAdmin(key){await db.ref(`sharedAdmins/${key}`).remove();toast('Access revoked.');}
 
 // ── IMAGE UPLOAD via Firebase Storage ──
-let _storage = null;
-function getStorage(){
-  if(_storage) return _storage;
-  try { _storage = firebase.storage(); } catch(e){ _storage = null; }
-  return _storage;
-}
-
 async function uploadImageFile(file){
-  // Validate
   if(!file) return null;
-  if(!file.type.startsWith('image/')) { toast('Only image files allowed.','err'); return null; }
-  if(file.size > 5 * 1024 * 1024) { toast('Image must be under 5MB.','err'); return null; }
 
-  const storage = getStorage();
-  if(!storage){
-    toast('Firebase Storage not ready. Check your internet connection and refresh.','err');
-    console.error('Firebase Storage init failed. Check storageBucket config and Storage Rules.');
+  // Validate type
+  if(!file.type.startsWith('image/')){
+    toast('Sirf image files allowed (JPG/PNG/WEBP).','err');
+    return null;
+  }
+  // Validate size
+  if(file.size > 5 * 1024 * 1024){
+    toast('Image 5MB se choti honi chahiye.','err');
     return null;
   }
 
-  const hotelId = S.myHotel?.id || S.editHotel?.id || S.myAdmin?.hotelId || S.hf?.id || ('h' + Date.now());
-  const ext = file.name.split('.').pop() || 'jpg';
-  const path = `hotelImages/${hotelId}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-  const ref = storage.ref(path);
+  // Init storage fresh every time (most reliable)
+  let storage;
+  try {
+    storage = firebase.storage();
+  } catch(e) {
+    toast('Firebase Storage unavailable: ' + e.message,'err');
+    console.error('Storage init error:', e);
+    return null;
+  }
+
+  const hotelId = (S.myHotel && S.myHotel.id)
+    || (S.editHotel && S.editHotel.id)
+    || (S.myAdmin && S.myAdmin.hotelId)
+    || (S.hf && S.hf.id)
+    || ('hotel_' + Date.now());
+
+  const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+  const fileName = Date.now() + '_' + Math.random().toString(36).substr(2,8) + '.' + ext;
+  const storagePath = 'hotelImages/' + hotelId + '/' + fileName;
 
   set({imgUploading:true, imgUploadProg:0, imgUploadErr:''});
 
-  return new Promise((resolve) => {
-    const task = ref.put(file);
-    task.on('state_changed',
-      snap => {
-        const pct = Math.round((snap.bytesTransferred / snap.totalBytes) * 100);
+  return new Promise(function(resolve){
+    var storageRef = storage.ref(storagePath);
+    var uploadTask = storageRef.put(file, { contentType: file.type });
+
+    uploadTask.on(
+      firebase.storage.TaskEvent.STATE_CHANGED,
+      // Progress
+      function(snapshot){
+        var pct = Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100);
         S.imgUploadProg = pct;
-        // update progress bar without full re-render
-        const bar = document.getElementById('hr-img-prog-bar');
+        var bar = document.getElementById('hr-img-prog-bar');
         if(bar) bar.style.width = pct + '%';
+        var pctEl = document.getElementById('hr-img-prog-pct');
+        if(pctEl) pctEl.textContent = pct + '%';
       },
-      err => {
-        set({imgUploading:false, imgUploadErr: err.message || 'Upload failed'});
-        toast('Upload failed: ' + (err.message||''), 'err');
+      // Error
+      function(error){
+        var msg = error.message || 'Upload failed';
+        set({imgUploading:false, imgUploadErr:msg});
+        console.error('Upload error:', error.code, error.message);
+        // Specific helpful messages
+        if(error.code === 'storage/unauthorized'){
+          toast('Storage permission denied — check Firebase Storage Rules.','err');
+        } else if(error.code === 'storage/canceled'){
+          toast('Upload cancelled.','err');
+        } else if(error.code === 'storage/unknown'){
+          toast('Network error — check internet and try again.','err');
+        } else {
+          toast('Upload failed: ' + msg,'err');
+        }
         resolve(null);
       },
-      async () => {
-        const url = await task.snapshot.ref.getDownloadURL();
-        set({imgUploading:false, imgUploadProg:100});
-        resolve(url);
+      // Success
+      function(){
+        uploadTask.snapshot.ref.getDownloadURL().then(function(url){
+          set({imgUploading:false, imgUploadProg:100});
+          resolve(url);
+        }).catch(function(e){
+          set({imgUploading:false, imgUploadErr: e.message});
+          toast('Could not get image URL: ' + e.message,'err');
+          resolve(null);
+        });
       }
     );
   });
